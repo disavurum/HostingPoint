@@ -58,8 +58,16 @@ chmod 600 letsencrypt 2>/dev/null || true
 
 # Build and start Docker containers
 echo -e "${BLUE}🐳 Building and starting Docker containers...${NC}"
-docker-compose down 2>/dev/null || true
-docker-compose up -d --build
+# Try docker compose (v2) first, fallback to docker-compose (v1)
+if command -v docker &> /dev/null && docker compose version &> /dev/null; then
+    docker compose down 2>/dev/null || true
+    docker compose up -d --build
+    COMPOSE_CMD="docker compose"
+else
+    docker-compose down 2>/dev/null || true
+    docker-compose up -d --build
+    COMPOSE_CMD="docker-compose"
+fi
 
 # Wait for services to be ready
 echo -e "${BLUE}⏳ Waiting for services to start...${NC}"
@@ -67,7 +75,7 @@ sleep 5
 
 # Check if containers are running
 echo -e "${BLUE}🔍 Checking container status...${NC}"
-docker-compose ps
+$COMPOSE_CMD ps
 
 echo -e "${GREEN}✅ Deployment complete!${NC}"
 echo -e "${GREEN}🌐 Traefik Dashboard: http://localhost:8080${NC}"
