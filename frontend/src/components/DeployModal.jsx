@@ -4,6 +4,7 @@ import axios from 'axios'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const DeployModal = ({ isOpen, onClose, apiUrl }) => {
+  const domain = import.meta.env.VITE_DOMAIN || 'vibehost.io'
   const [forumName, setForumName] = useState('')
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
@@ -126,7 +127,7 @@ const DeployModal = ({ isOpen, onClose, apiUrl }) => {
                       required
                     />
                     <div className="bg-gray-100 border-2 border-l-0 border-black px-4 flex items-center text-gray-500 font-medium">
-                      .vibehost.io
+                      .{domain}
                     </div>
                   </div>
                 </div>

@@ -59,6 +59,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - VITE_DOMAIN=${DOMAIN:-vibehost.io}
     container_name: vibehost-frontend
     restart: unless-stopped
     labels:

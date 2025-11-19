@@ -26,6 +26,7 @@ const Dashboard = () => {
   const [settingsLoading, setSettingsLoading] = useState(false);
 
   const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const domain = import.meta.env.VITE_DOMAIN || 'vibehost.io';
 
   useEffect(() => {
     // Check URL hash to set active tab on initial load
@@ -282,7 +283,7 @@ const Dashboard = () => {
                         {forum.name[0].toUpperCase()}
                       </div>
                       <div>
-                        <h3 className="text-xl font-bold">{forum.name}.vibehost.io</h3>
+                        <h3 className="text-xl font-bold">{forum.url ? new URL(forum.url).hostname : `${forum.name}.${domain}`}</h3>
                         <div className="flex items-center gap-2 text-sm font-medium mt-1">
                           <span className={`w-2 h-2 rounded-full ${getStatusColor(forum.status)}`}></span>
                           <span className="capitalize text-gray-600">{getStatusText(forum.status)}</span>

@@ -11,7 +11,9 @@ RUN npm ci
 # Copy source files
 COPY . .
 
-# Build the application
+# Build the application with environment variables
+ARG VITE_DOMAIN=vibehost.io
+ENV VITE_DOMAIN=${VITE_DOMAIN}
 RUN npm run build
 
 # Production stage - serve with nginx
