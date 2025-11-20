@@ -1,0 +1,26 @@
+# Backend için ayrı docker-compose dosyası
+# Coolify'de backend application için kullanın
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vibehost-backend
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./backend/customers:/app/customers
+      - ./backend/database:/app/database
+      - ./backend/logs:/app/logs
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DOMAIN=${DOMAIN}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-30d}
+      - DB_PATH=./database/database.sqlite
+      - BCRYPT_ROUNDS=${BCRYPT_ROUNDS:-10}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+    # Coolify otomatik olarak port mapping ve domain yönetimi yapar
+

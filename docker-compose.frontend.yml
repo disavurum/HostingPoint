@@ -1,0 +1,14 @@
+# Frontend için ayrı docker-compose dosyası
+# Coolify'de frontend application için kullanın
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_DOMAIN=${DOMAIN}
+    container_name: vibehost-frontend
+    restart: unless-stopped
+    # Coolify otomatik olarak port mapping ve domain yönetimi yapar
+
