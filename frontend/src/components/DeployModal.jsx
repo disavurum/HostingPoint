@@ -3,7 +3,7 @@ import { X, Loader2, CheckCircle2, AlertCircle, Globe, Server } from 'lucide-rea
 import axios from 'axios'
 import { motion, AnimatePresence } from 'framer-motion'
 
-const DeployModal = ({ isOpen, onClose, apiUrl }) => {
+const DeployModal = ({ isOpen, onClose }) => {
   const domain = import.meta.env.VITE_DOMAIN || 'vibehost.io'
   const [forumName, setForumName] = useState('')
   const [email, setEmail] = useState('')
@@ -30,16 +30,8 @@ const DeployModal = ({ isOpen, onClose, apiUrl }) => {
       setTimeout(() => setStatusMessage('Altyapı hazırlanıyor...'), 2000)
       setTimeout(() => setStatusMessage('Veritabanı kuruluyor...'), 4000)
       
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setStatus('error');
-        setStatusMessage('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
-        return;
-      }
-      
-      const response = await axios.post(`${apiUrl}/api/deploy`, { forumName, email }, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      // Use global axios instance which handles base URL and token
+      const response = await axios.post('/api/deploy', { forumName, email })
 
       setStatus('success')
       setStatusMessage('Kurulum tamamlandı.')

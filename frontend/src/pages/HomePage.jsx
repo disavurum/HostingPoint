@@ -412,7 +412,6 @@ function HomePage() {
       <DeployModal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)}
-        apiUrl={API_URL}
       />
     </div>
   )

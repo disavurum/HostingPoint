@@ -417,7 +417,6 @@ const Dashboard = () => {
         <DeployModal 
           isOpen={isDeployModalOpen} 
           onClose={() => setIsDeployModalOpen(false)}
-          apiUrl={apiUrl}
         />
       </main>
     </div>
