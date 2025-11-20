@@ -30,14 +30,27 @@ const DeployModal = ({ isOpen, onClose, apiUrl }) => {
       setTimeout(() => setStatusMessage('Altyapı hazırlanıyor...'), 2000)
       setTimeout(() => setStatusMessage('Veritabanı kuruluyor...'), 4000)
       
-      const response = await axios.post(`${apiUrl}/api/deploy`, { forumName, email })
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setStatus('error');
+        setStatusMessage('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+        return;
+      }
+      
+      const response = await axios.post(`${apiUrl}/api/deploy`, { forumName, email }, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
 
       setStatus('success')
       setStatusMessage('Kurulum tamamlandı.')
       setForumUrl(response.data.forumUrl)
     } catch (error) {
       setStatus('error')
-      setStatusMessage('Bir hata oluştu.')
+      if (error.response?.status === 401) {
+        setStatusMessage('Oturum süreniz dolmuş. Lütfen sayfayı yenileyip tekrar giriş yapın.')
+      } else {
+        setStatusMessage(error.response?.data?.message || 'Bir hata oluştu. Lütfen tekrar deneyin.')
+      }
     } finally {
       setLoading(false)
     }
