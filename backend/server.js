@@ -50,8 +50,13 @@ app.use(helmet({
 
 // CORS configuration
 const corsOptions = {
-  origin: true, // Allow any origin for now
+  origin: function (origin, callback) {
+    // Allow all origins (for now) to fix CORS issues
+    callback(null, true);
+  },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
