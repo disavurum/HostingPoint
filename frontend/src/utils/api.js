@@ -7,21 +7,28 @@ import axios from 'axios';
  * - Otherwise use localhost:3000
  */
 export const getApiUrl = () => {
+  // Always check at runtime, not at build time
+  if (typeof window === 'undefined') {
+    return 'http://localhost:3000';
+  }
+  
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
   
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
     return `${window.location.protocol}//api.${window.location.hostname}`;
   }
   
   return 'http://localhost:3000';
 };
 
-export const API_URL = getApiUrl();
-
-// Configure axios defaults
-axios.defaults.baseURL = API_URL;
+// Configure axios defaults - set dynamically at runtime
+if (typeof window !== 'undefined') {
+  axios.defaults.baseURL = getApiUrl();
+} else {
+  axios.defaults.baseURL = 'http://localhost:3000';
+}
 
 // Request interceptor: Add token to all requests automatically
 axios.interceptors.request.use(
