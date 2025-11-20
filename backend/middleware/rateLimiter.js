@@ -13,6 +13,7 @@ const apiLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: false, // Disable validation warnings for trust proxy
 });
 
 // Stricter limiter for deployment endpoint
@@ -25,6 +26,7 @@ const deployLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: false, // Disable validation warnings for trust proxy
 });
 
 // Stricter limiter for authentication endpoints
@@ -38,6 +40,7 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true, // Don't count successful requests
+  validate: false, // Disable validation warnings for trust proxy
 });
 
 module.exports = {

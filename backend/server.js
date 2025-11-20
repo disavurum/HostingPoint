@@ -24,7 +24,8 @@ const PORT = process.env.PORT || 3000;
 const DOMAIN = process.env.DOMAIN || 'vibehost.io';
 
 // Trust proxy (required when behind reverse proxy like Traefik)
-app.set('trust proxy', true);
+// Set to 1 to trust only the first proxy (Traefik)
+app.set('trust proxy', 1);
 
 // Initialize database
 async function initializeDatabase() {
