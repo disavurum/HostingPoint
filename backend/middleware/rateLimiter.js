@@ -4,6 +4,7 @@ const WINDOW_MS = parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000; 
 const MAX_REQUESTS = parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100;
 
 // General API rate limiter
+// Temporarily disabled validation to fix trust proxy issue
 const apiLimiter = rateLimit({
   windowMs: WINDOW_MS,
   max: MAX_REQUESTS,
@@ -13,7 +14,11 @@ const apiLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  validate: false, // Disable validation warnings for trust proxy
+  skip: () => false, // Keep rate limiting active
+  validate: {
+    trustProxy: false, // Disable trust proxy validation
+    xForwardedForHeader: false, // Disable X-Forwarded-For validation
+  },
 });
 
 // Stricter limiter for deployment endpoint
@@ -26,7 +31,10 @@ const deployLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
-  validate: false, // Disable validation warnings for trust proxy
+  validate: {
+    trustProxy: false,
+    xForwardedForHeader: false,
+  },
 });
 
 // Stricter limiter for authentication endpoints
@@ -40,7 +48,10 @@ const authLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true, // Don't count successful requests
-  validate: false, // Disable validation warnings for trust proxy
+  validate: {
+    trustProxy: false,
+    xForwardedForHeader: false,
+  },
 });
 
 module.exports = {
