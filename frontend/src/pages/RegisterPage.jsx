@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { getApiUrl } from '../utils/api';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -17,7 +18,7 @@ const RegisterPage = () => {
     setError('');
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const apiUrl = getApiUrl();
       const response = await axios.post(`${apiUrl}/api/auth/register`, {
         name,
         email,

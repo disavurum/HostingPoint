@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Layout, Plus, Settings, LogOut, Server, ExternalLink, Lock, User, Mail } from 'lucide-react';
 import DeployModal from '../components/DeployModal';
+import { getApiUrl } from '../utils/api';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ const Dashboard = () => {
   });
   const [settingsLoading, setSettingsLoading] = useState(false);
 
-  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+  const apiUrl = getApiUrl();
   const domain = import.meta.env.VITE_DOMAIN || 'vibehost.io';
 
   useEffect(() => {

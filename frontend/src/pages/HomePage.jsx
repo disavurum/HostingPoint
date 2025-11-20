@@ -1,14 +1,8 @@
 import { useState, useEffect } from 'react'
 import { ArrowRight, Check, Globe, Layout, Shield, Users, Zap, Menu } from 'lucide-react'
 import DeployModal from '../components/DeployModal'
+import { getApiUrl } from '../utils/api'
 
-const getApiUrl = () => {
-  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-    return `${window.location.protocol}//api.${window.location.hostname}`
-  }
-  return 'http://localhost:3000'
-}
 const API_URL = getApiUrl()
 
 function HomePage() {
