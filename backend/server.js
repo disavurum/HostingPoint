@@ -88,14 +88,14 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Auth routes (with auth rate limiting)
+// Auth routes (rate limiting temporarily disabled for debugging)
 app.use('/api/auth', authRoutes);
 
-// Apply general rate limiting to all API routes
-app.use('/api', apiLimiter);
+// Apply general rate limiting to all API routes (temporarily disabled)
+// app.use('/api', apiLimiter);
 
-// Deploy forum endpoint (with stricter rate limiting and authentication)
-app.post('/api/deploy', authenticate, deployLimiter, async (req, res, next) => {
+// Deploy forum endpoint (rate limiting temporarily disabled)
+app.post('/api/deploy', authenticate, async (req, res, next) => {
   try {
     const { forumName, email } = req.body;
 
