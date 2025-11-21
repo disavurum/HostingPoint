@@ -27,8 +27,14 @@ RUN echo "=== Build Environment ===" && \
     echo "VITE_DOMAIN: $VITE_DOMAIN" && \
     echo "========================"
 
-# Build the application
-RUN npm run build 2>&1 | tee build.log || (cat build.log && exit 1)
+# Build the application - fail immediately if build fails
+RUN set -e && \
+    npm run build && \
+    echo "=== Build completed ===" && \
+    ls -la /app/ && \
+    echo "=== Checking dist directory ===" && \
+    ls -la /app/dist/ && \
+    echo "=== Build successful ==="
 
 # Production stage
 FROM nginx:alpine

@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vibehost-api
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DOMAIN=${DOMAIN:-hostingpoint.net}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+      - DB_PATH=/app/data/database.sqlite
+      - FRONTEND_URL=${FRONTEND_URL:-https://hostingpoint.net}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
+      - STRIPE_PRICE_ID=${STRIPE_PRICE_ID:-}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
+      - ACME_EMAIL=${ACME_EMAIL:-admin@hostingpoint.net}
+      - BCRYPT_ROUNDS=${BCRYPT_ROUNDS:-10}
+    volumes:
+      - backend-data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - coolify
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vibehost-api.rule=Host(`api.${DOMAIN:-hostingpoint.net}`)"
+      - "traefik.http.routers.vibehost-api.entrypoints=websecure"
+      - "traefik.http.routers.vibehost-api.tls=true"
+      - "traefik.http.routers.vibehost-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.vibehost-api.loadbalancer.server.port=3000"
+      - "coolify.managed=true"
+
+volumes:
+  backend-data:
+
+networks:
+  coolify:
+    external: true
