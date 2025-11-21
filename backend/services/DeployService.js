@@ -85,7 +85,7 @@ class DeployService {
    */
   static generateDockerCompose(forumName, email, domain, dbPassword, redisPassword) {
     const fullDomain = `${forumName}.${domain}`;
-    
+
     return `version: '3.8'
 
 services:
@@ -159,11 +159,13 @@ services:
       - discourse_data_${forumName}:/bitnami/discourse
     networks:
       - discourse_${forumName}
+      - coolify
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.${forumName}.rule=Host(\`${fullDomain}\`)"
       - "traefik.http.routers.${forumName}.entrypoints=websecure"
-      - "traefik.http.routers.${forumName}.tls.certresolver=myresolver"
+      - "traefik.http.routers.${forumName}.tls=true"
+      - "traefik.http.routers.${forumName}.tls.certresolver=letsencrypt"
       - "traefik.http.services.${forumName}.loadbalancer.server.port=3000"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000"]
@@ -179,6 +181,8 @@ volumes:
 networks:
   discourse_${forumName}:
     driver: bridge
+  coolify:
+    external: true
 `;
   }
 
@@ -236,7 +240,7 @@ networks:
       for (const dir of dirs) {
         const forumPath = path.join(CUSTOMERS_DIR, dir);
         const stats = await fs.stat(forumPath);
-        
+
         if (stats.isDirectory()) {
           const status = await this.getForumStatus(dir).catch(() => ({
             forumName: dir,
