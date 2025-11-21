@@ -11,10 +11,10 @@ class User {
   async createTable() {
     const query = `
       CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        email VARCHAR(255) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        name VARCHAR(255),
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        name TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         is_admin INTEGER DEFAULT 0,
@@ -22,7 +22,7 @@ class User {
       );
     `;
     try {
-      await db.query(query);
+      await db.run(query);
     } catch (err) {
       throw err;
     }
@@ -32,23 +32,22 @@ class User {
     const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
     const query = `
       INSERT INTO users (email, password, name) 
-      VALUES ($1, $2, $3) 
-      RETURNING id, email, name
+      VALUES (?, ?, ?)
     `;
     
     try {
-      const { rows } = await db.query(query, [email, hashedPassword, name]);
-      return rows[0];
+      const result = await db.run(query, [email, hashedPassword, name]);
+      return { id: result.id, email, name };
     } catch (err) {
       throw err;
     }
   }
 
   async findByEmail(email) {
-    const query = `SELECT * FROM users WHERE email = $1 AND is_active = 1`;
+    const query = `SELECT * FROM users WHERE email = ? AND is_active = 1`;
     try {
-      const { rows } = await db.query(query, [email]);
-      return rows[0];
+      const row = await db.get(query, [email]);
+      return row;
     } catch (err) {
       throw err;
     }
@@ -58,11 +57,11 @@ class User {
     const query = `
       SELECT id, email, name, created_at, is_admin 
       FROM users 
-      WHERE id = $1 AND is_active = 1
+      WHERE id = ? AND is_active = 1
     `;
     try {
-      const { rows } = await db.query(query, [id]);
-      return rows[0];
+      const row = await db.get(query, [id]);
+      return row;
     } catch (err) {
       throw err;
     }
@@ -76,46 +75,42 @@ class User {
     const { name, email, password } = updates;
     let query = 'UPDATE users SET updated_at = CURRENT_TIMESTAMP';
     const values = [];
-    let paramCount = 1;
-
+    
     if (name) {
-      query += `, name = $${paramCount}`;
+      query += `, name = ?`;
       values.push(name);
-      paramCount++;
     }
     if (email) {
-      query += `, email = $${paramCount}`;
+      query += `, email = ?`;
       values.push(email);
-      paramCount++;
     }
     if (password) {
       const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
-      query += `, password = $${paramCount}`;
+      query += `, password = ?`;
       values.push(hashedPassword);
-      paramCount++;
     }
 
-    query += ` WHERE id = $${paramCount}`;
+    query += ` WHERE id = ?`;
     values.push(id);
 
     try {
-      await db.query(query, values);
+      await db.run(query, values);
     } catch (err) {
       throw err;
     }
   }
 
   async updateLastLogin(userId) {
-    const query = `UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = $1`;
+    const query = `UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = ?`;
     try {
-      await db.query(query, [userId]);
+      await db.run(query, [userId]);
     } catch (err) {
       throw err;
     }
   }
 
   close() {
-    // Pool handles closing
+    // DB handles closing
   }
 }
 

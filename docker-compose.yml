@@ -40,12 +40,19 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./backend/customers:/app/customers
       - ./letsencrypt:/letsencrypt
+      - ./backend/database:/app/database
+      - ./backend/logs:/app/logs
     environment:
       - NODE_ENV=production
       - PORT=3000
       - DOMAIN=${DOMAIN:-vibehost.io}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-changeme}
       - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-30d}
+      - DB_PATH=${DB_PATH:-./database/database.sqlite}
+      - BCRYPT_ROUNDS=${BCRYPT_ROUNDS:-10}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=Host(`api.${DOMAIN:-vibehost.io}`)"

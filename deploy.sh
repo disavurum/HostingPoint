@@ -64,8 +64,8 @@ if command -v docker &> /dev/null && docker compose version &> /dev/null; then
     docker compose up -d --build
     COMPOSE_CMD="docker compose"
 else
-    docker-compose down 2>/dev/null || true
-    docker-compose up -d --build
+docker-compose down 2>/dev/null || true
+docker-compose up -d --build
     COMPOSE_CMD="docker-compose"
 fi
 
