@@ -12,19 +12,23 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build arguments - Coolify will inject these
+# Build arguments from Coolify
 ARG VITE_API_URL=https://api.hostingpoint.net
 ARG VITE_DOMAIN=hostingpoint.net
+ARG DOMAIN=hostingpoint.net
 
-# Set as environment variables for Vite build
+# If VITE_API_URL is not provided, construct it from DOMAIN
 ENV VITE_API_URL=${VITE_API_URL}
-ENV VITE_DOMAIN=${VITE_DOMAIN}
+ENV VITE_DOMAIN=${VITE_DOMAIN:-${DOMAIN}}
 
-# Debug: Print env vars (optional, remove in production)
-RUN echo "Building with VITE_API_URL=$VITE_API_URL and VITE_DOMAIN=$VITE_DOMAIN"
+# Debug output
+RUN echo "=== Build Environment ===" && \
+    echo "VITE_API_URL: $VITE_API_URL" && \
+    echo "VITE_DOMAIN: $VITE_DOMAIN" && \
+    echo "========================"
 
 # Build the application
-RUN npm run build
+RUN npm run build 2>&1 | tee build.log || (cat build.log && exit 1)
 
 # Production stage
 FROM nginx:alpine
