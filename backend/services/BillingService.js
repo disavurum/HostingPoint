@@ -1,4 +1,8 @@
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+// Initialize Stripe only if API key is provided
+const stripe = process.env.STRIPE_SECRET_KEY
+    ? require('stripe')(process.env.STRIPE_SECRET_KEY)
+    : null;
+
 const logger = require('../utils/logger');
 const User = require('../models/User');
 
@@ -7,6 +11,10 @@ class BillingService {
      * Create a checkout session for a subscription
      */
     static async createCheckoutSession(userId, email, priceId) {
+        if (!stripe) {
+            throw new Error('Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable.');
+        }
+
         try {
             const session = await stripe.checkout.sessions.create({
                 mode: 'subscription',
@@ -61,6 +69,10 @@ class BillingService {
      * Handle Stripe webhooks
      */
     static async handleWebhook(signature, payload) {
+        if (!stripe) {
+            throw new Error('Stripe is not configured');
+        }
+
         try {
             const event = stripe.webhooks.constructEvent(
                 payload,
