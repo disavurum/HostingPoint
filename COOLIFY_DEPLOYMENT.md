@@ -28,16 +28,26 @@ This guide explains how to deploy VibeHost to your Coolify instance on AWS EC2 u
     *   **Domain**: `https://api.hostingpoint.net`
     *   **Port Exposes**: `3000`
 6.  **Environment Variables** (Add these in the "Environment Variables" tab):
+    
+    **Copy from `.env.coolify-template` file in the repo**
+    
+    **Required Variables:**
     *   `PORT`: `3000`
     *   `DOMAIN`: `hostingpoint.net`
     *   `NODE_ENV`: `production`
     *   `DB_PATH`: `/app/backend/database.sqlite`
-    *   `JWT_SECRET`: (Generate a random secure string)
-    *   `STRIPE_SECRET_KEY`: (Your Stripe Secret Key)
-    *   `STRIPE_PRICE_ID`: (Your Stripe Price ID)
-    *   `STRIPE_WEBHOOK_SECRET`: (Your Stripe Webhook Secret)
+    *   `JWT_SECRET`: (Generate a random secure string - use `openssl rand -base64 32`)
     *   `FRONTEND_URL`: `https://hostingpoint.net`
-7.  **Storage (Volumes)**:
+    
+    **Stripe (Required for billing):**
+    *   `STRIPE_SECRET_KEY`: `sk_live_...` (Your Stripe Secret Key)
+    *   `STRIPE_PRICE_ID`: `price_...` (Your Stripe Price ID)
+    *   `STRIPE_WEBHOOK_SECRET`: `whsec_...` (Your Stripe Webhook Secret)
+    
+    **Let's Encrypt SSL:**
+    *   `ACME_EMAIL`: `admin@hostingpoint.net` (For SSL certificate notifications)
+    
+7.  **Storage (Volumes)** - CRITICAL FOR DATA PERSISTENCE:
     *   Go to **Storage** tab.
     *   Add a new volume:
         *   **Name**: `vibehost-db`
