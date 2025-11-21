@@ -1,8 +1,12 @@
 node_modules
 npm-debug.log
-dist
 .env
 .env.local
-*.md
 .DS_Store
-
+*.log
+coverage
+.vscode
+.idea
+*.swp
+*.swo
+dist

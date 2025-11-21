@@ -1,23 +1,25 @@
-FROM node:18-alpine
+FROM node:22-alpine
 
 WORKDIR /app
-
-# Install docker-compose
-RUN apk add --no-cache docker-cli docker-compose
 
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
+# Install production dependencies
 RUN npm ci --only=production
 
-# Copy application files
+# Copy application code
 COPY . .
 
-# Create customers directory
-RUN mkdir -p /app/customers
+# Create data directory for SQLite
+RUN mkdir -p /app/data
 
+# Expose port
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
+# Start server
+CMD ["npm", "start"]

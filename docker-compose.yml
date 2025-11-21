@@ -1,77 +1,62 @@
-services:
-  traefik:
-    image: traefik:v2.10
-    container_name: traefik
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-      - "8080:8080"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./letsencrypt:/letsencrypt
-    command:
-      - --api.dashboard=true
-      - --api.insecure=true
-      - --providers.docker=true
-      - --providers.docker.exposedbydefault=false
-      - --entrypoints.web.address=:80
-      - --entrypoints.websecure.address=:443
-      - --certificatesresolvers.myresolver.acme.httpchallenge=true
-      - --certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web
-      - --certificatesresolvers.myresolver.acme.email=${ACME_EMAIL:-admin@vibehost.io}
-      - --certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json
-      - --entrypoints.web.http.redirections.entrypoint.to=websecure
-      - --entrypoints.web.http.redirections.entrypoint.scheme=https
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.traefik.rule=Host(`traefik.vibehost.io`)"
-      - "traefik.http.routers.traefik.entrypoints=websecure"
-      - "traefik.http.routers.traefik.tls.certresolver=myresolver"
-      - "traefik.http.routers.traefik.service=api@internal"
+version: '3.8'
 
+services:
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: vibehost-backend
+    container_name: vibehost-api
     restart: unless-stopped
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ./backend/customers:/app/customers
-      - ./letsencrypt:/letsencrypt
-      - ./backend/database:/app/database
-      - ./backend/logs:/app/logs
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - DOMAIN=${DOMAIN:-vibehost.io}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-changeme}
-      - REDIS_PASSWORD=${REDIS_PASSWORD:-changeme}
-      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-this-in-production}
-      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-30d}
-      - DB_PATH=${DB_PATH:-./database/database.sqlite}
+      - DOMAIN=${DOMAIN:-hostingpoint.net}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN:-7d}
+      - DB_PATH=/app/data/database.sqlite
+      - FRONTEND_URL=${FRONTEND_URL:-https://hostingpoint.net}
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
+      - STRIPE_PRICE_ID=${STRIPE_PRICE_ID:-}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
+      - ACME_EMAIL=${ACME_EMAIL:-admin@hostingpoint.net}
       - BCRYPT_ROUNDS=${BCRYPT_ROUNDS:-10}
-      - LOG_LEVEL=${LOG_LEVEL:-info}
+    volumes:
+      - backend-data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - coolify
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`api.${DOMAIN:-vibehost.io}`)"
-      - "traefik.http.routers.backend.entrypoints=websecure"
-      - "traefik.http.routers.backend.tls.certresolver=myresolver"
-      - "traefik.http.services.backend.loadbalancer.server.port=3000"
+      - "traefik.http.routers.vibehost-api.rule=Host(`api.${DOMAIN:-hostingpoint.net}`)"
+      - "traefik.http.routers.vibehost-api.entrypoints=websecure"
+      - "traefik.http.routers.vibehost-api.tls=true"
+      - "traefik.http.routers.vibehost-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.vibehost-api.loadbalancer.server.port=3000"
+      - "coolify.managed=true"
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - VITE_DOMAIN=${DOMAIN:-vibehost.io}
-    container_name: vibehost-frontend
+        - VITE_API_URL=https://api.${DOMAIN:-hostingpoint.net}
+        - VITE_DOMAIN=${DOMAIN:-hostingpoint.net}
+    container_name: vibehost-web
     restart: unless-stopped
+    networks:
+      - coolify
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.routers.frontend.entrypoints=websecure"
-      - "traefik.http.routers.frontend.tls.certresolver=myresolver"
-      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+      - "traefik.http.routers.vibehost-web.rule=Host(`${DOMAIN:-hostingpoint.net}`) || Host(`www.${DOMAIN:-hostingpoint.net}`)"
+      - "traefik.http.routers.vibehost-web.entrypoints=websecure"
+      - "traefik.http.routers.vibehost-web.tls=true"
+      - "traefik.http.routers.vibehost-web.tls.certresolver=letsencrypt"
+      - "traefik.http.services.vibehost-web.loadbalancer.server.port=80"
+      - "coolify.managed=true"
 
+volumes:
+  backend-data:
+
+networks:
+  coolify:
+    external: true
