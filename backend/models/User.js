@@ -34,7 +34,7 @@ class User {
       INSERT INTO users (email, password, name) 
       VALUES (?, ?, ?)
     `;
-    
+
     try {
       const result = await db.run(query, [email, hashedPassword, name]);
       return { id: result.id, email, name };
@@ -75,7 +75,7 @@ class User {
     const { name, email, password } = updates;
     let query = 'UPDATE users SET updated_at = CURRENT_TIMESTAMP';
     const values = [];
-    
+
     if (name) {
       query += `, name = ?`;
       values.push(name);
@@ -104,6 +104,26 @@ class User {
     const query = `UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = ?`;
     try {
       await db.run(query, [userId]);
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  async count() {
+    const query = `SELECT COUNT(*) as count FROM users`;
+    try {
+      const row = await db.get(query);
+      return row.count;
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  async findAll() {
+    const query = `SELECT id, email, name, created_at, is_admin, is_active FROM users ORDER BY created_at DESC`;
+    try {
+      const rows = await db.query(query);
+      return rows;
     } catch (err) {
       throw err;
     }

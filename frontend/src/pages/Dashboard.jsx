@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import { Layout, Plus, Settings, LogOut, Server, ExternalLink, Lock, User, Mail } from 'lucide-react';
+import { Layout, Plus, Settings, LogOut, Server, ExternalLink, Lock, User, Mail, Activity, CreditCard, Cpu, HardDrive } from 'lucide-react';
 import DeployModal from '../components/DeployModal';
+import ForumSettingsModal from '../components/ForumSettingsModal';
 import { getApiUrl } from '../utils/api';
 
 const Dashboard = () => {
@@ -14,7 +15,10 @@ const Dashboard = () => {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isDeployModalOpen, setIsDeployModalOpen] = useState(false);
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [selectedForum, setSelectedForum] = useState(null);
   const [activeTab, setActiveTab] = useState('overview'); // overview, forums, settings
+  const [forumStats, setForumStats] = useState({});
 
   // Settings state
   const [settingsForm, setSettingsForm] = useState({
@@ -52,12 +56,17 @@ const Dashboard = () => {
         name: parsedUser.name || '',
         email: parsedUser.email || ''
       }));
-      
+
       try {
         const response = await axios.get(`${apiUrl}/api/forums`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setForums(response.data.forums || []);
+
+        // Fetch stats for active forums
+        const activeForums = (response.data.forums || []).filter(f => f.status === 'active');
+        activeForums.forEach(forum => fetchForumStats(forum.name, token));
+
       } catch (err) {
         console.error('Failed to fetch forums:', err);
         if (err.response?.status === 401) {
@@ -72,6 +81,20 @@ const Dashboard = () => {
 
     checkAuth();
   }, [navigate, apiUrl]);
+
+  const fetchForumStats = async (forumName, token) => {
+    try {
+      const response = await axios.get(`${apiUrl}/api/forums/${forumName}/stats`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setForumStats(prev => ({
+        ...prev,
+        [forumName]: response.data
+      }));
+    } catch (err) {
+      console.error(`Failed to fetch stats for ${forumName}:`, err);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.clear();
@@ -113,6 +136,22 @@ const Dashboard = () => {
     }
   };
 
+  const handleUpgrade = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(`${apiUrl}/api/billing/checkout`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.data.url) {
+        window.location.href = response.data.url;
+      }
+    } catch (err) {
+      console.error('Upgrade failed:', err);
+      alert('Ödeme sayfası başlatılamadı. Lütfen daha sonra tekrar deneyin.');
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'active': return 'bg-green-500';
@@ -151,27 +190,37 @@ const Dashboard = () => {
         </div>
 
         <nav className="flex-1 p-4 space-y-2">
-          <button 
+          <button
             onClick={() => setActiveTab('overview')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${activeTab === 'overview' ? 'bg-gray-900 text-white' : 'text-gray-400 hover:bg-gray-900 hover:text-white'}`}
           >
             <Layout className="h-5 w-5" />
             Genel Bakış
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('forums')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${activeTab === 'forums' ? 'bg-gray-900 text-white' : 'text-gray-400 hover:bg-gray-900 hover:text-white'}`}
           >
             <Server className="h-5 w-5" />
             Forumlarım
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('settings')}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${activeTab === 'settings' ? 'bg-gray-900 text-white' : 'text-gray-400 hover:bg-gray-900 hover:text-white'}`}
           >
             <Settings className="h-5 w-5" />
             Ayarlar
           </button>
+
+          {user?.is_admin === 1 && (
+            <button
+              onClick={() => navigate('/admin')}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors text-red-500 hover:bg-red-50 hover:text-red-600 mt-4"
+            >
+              <Lock className="h-5 w-5" />
+              Admin Paneli
+            </button>
+          )}
         </nav>
 
         <div className="p-4 border-t border-gray-800">
@@ -184,7 +233,7 @@ const Dashboard = () => {
               <div className="text-xs text-gray-500 truncate">{user?.email}</div>
             </div>
           </div>
-          <button 
+          <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-2 text-red-400 hover:bg-gray-900 rounded-lg transition-colors font-medium text-sm"
           >
@@ -210,7 +259,7 @@ const Dashboard = () => {
             </p>
           </div>
           {activeTab !== 'settings' && (
-            <button 
+            <button
               onClick={() => setIsDeployModalOpen(true)}
               className="bg-black text-white px-6 py-3 font-bold flex items-center gap-2 border-2 border-black shadow-[4px_4px_0px_0px_#9ca3af] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all"
             >
@@ -225,31 +274,84 @@ const Dashboard = () => {
           <>
             <div className="grid md:grid-cols-3 gap-6 mb-12">
               <div className="bg-white p-6 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                <div className="text-gray-500 font-bold mb-2">Toplam Forum</div>
+                <div className="text-gray-500 font-bold mb-2 flex items-center gap-2">
+                  <Server className="h-4 w-4" /> Toplam Forum
+                </div>
                 <div className="text-4xl font-black">{forums.length}</div>
               </div>
               <div className="bg-white p-6 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                <div className="text-gray-500 font-bold mb-2">Aktif Forum</div>
+                <div className="text-gray-500 font-bold mb-2 flex items-center gap-2">
+                  <Activity className="h-4 w-4" /> Aktif Forum
+                </div>
                 <div className="text-4xl font-black">{forums.filter(f => f.status === 'active').length}</div>
               </div>
               <div className="bg-white p-6 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                <div className="text-gray-500 font-bold mb-2">Hızlı İşlemler</div>
-                <div className="flex gap-2 mt-2">
-                  <button onClick={() => setIsDeployModalOpen(true)} className="text-sm font-bold underline">Forum Kur</button>
-                  <span className="text-gray-300">|</span>
-                  <button onClick={() => setActiveTab('settings')} className="text-sm font-bold underline">Ayarlar</button>
+                <div className="text-gray-500 font-bold mb-2 flex items-center gap-2">
+                  <CreditCard className="h-4 w-4" /> Fatura Durumu
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="text-xl font-bold">Starter Plan</div>
+                  <button onClick={handleUpgrade} className="text-xs bg-black text-white px-2 py-1 font-bold hover:bg-gray-800 transition-colors">Yükselt</button>
+                </div>
+                <div className="text-xs text-gray-400 mt-1">Sonraki ödeme: 21 Ara 2025</div>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-8 mb-12">
+              {/* Resource Usage Widget */}
+              <div className="bg-white border-2 border-black p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                  <Activity className="h-5 w-5" /> Kaynak Kullanımı
+                </h2>
+                {forums.filter(f => f.status === 'active').length > 0 ? (
+                  <div className="space-y-4">
+                    {forums.filter(f => f.status === 'active').map(forum => {
+                      const stats = forumStats[forum.name];
+                      const totalCpu = stats?.containers?.reduce((acc, c) => acc + (c.cpu || 0), 0) || 0;
+                      const totalMem = stats?.containers?.reduce((acc, c) => acc + (c.memory?.percent || 0), 0) || 0;
+
+                      return (
+                        <div key={forum.id} className="border border-gray-200 p-3 rounded">
+                          <div className="font-bold mb-2">{forum.name}</div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <div className="text-xs text-gray-500 flex items-center gap-1 mb-1"><Cpu className="h-3 w-3" /> CPU</div>
+                              <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                                <div className="bg-black h-full transition-all duration-500" style={{ width: `${Math.min(totalCpu, 100)}%` }}></div>
+                              </div>
+                              <div className="text-xs font-bold mt-1">{totalCpu.toFixed(1)}%</div>
+                            </div>
+                            <div>
+                              <div className="text-xs text-gray-500 flex items-center gap-1 mb-1"><HardDrive className="h-3 w-3" /> RAM</div>
+                              <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+                                <div className="bg-black h-full transition-all duration-500" style={{ width: `${Math.min(totalMem / 3, 100)}%` }}></div>
+                              </div>
+                              <div className="text-xs font-bold mt-1">{(totalMem / 3).toFixed(1)}%</div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 italic">Aktif forum bulunmuyor.</p>
+                )}
+              </div>
+
+              {/* Quick Actions / News */}
+              <div className="bg-white border-2 border-black p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                <h2 className="text-xl font-bold mb-4">Sistem Durumu</h2>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 text-sm">
+                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                    <span>Tüm sistemler çalışıyor</span>
+                  </div>
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800">
+                    <span className="font-bold">Duyuru:</span> Yeni yedekleme sistemi yakında aktif olacak!
+                  </div>
                 </div>
               </div>
             </div>
-            
-            <h2 className="text-2xl font-bold mb-6">Son Aktiviteler</h2>
-            {forums.length > 0 ? (
-              <div className="bg-white border-2 border-black p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-                <p className="text-gray-500 italic">Henüz aktivite kaydı yok.</p>
-              </div>
-            ) : (
-              <p className="text-gray-500">Henüz işlem yapılmadı.</p>
-            )}
           </>
         )}
 
@@ -258,7 +360,7 @@ const Dashboard = () => {
           <>
             {activeTab === 'forums' && <div className="mb-6"></div>}
             {(activeTab === 'overview' && forums.length > 0) && <h2 className="text-2xl font-bold mb-6">Forumlarım</h2>}
-            
+
             {forums.length === 0 ? (
               activeTab === 'forums' && (
                 <div className="bg-white border-2 border-dashed border-gray-300 rounded-lg p-12 text-center">
@@ -267,7 +369,7 @@ const Dashboard = () => {
                   </div>
                   <h3 className="text-xl font-bold mb-2">Henüz Forumunuz Yok</h3>
                   <p className="text-gray-500 mb-6">İlk topluluğunuzu oluşturmak için hemen başlayın.</p>
-                  <button 
+                  <button
                     onClick={() => setIsDeployModalOpen(true)}
                     className="text-[#ffc900] font-bold hover:underline"
                   >
@@ -291,19 +393,25 @@ const Dashboard = () => {
                         </div>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center gap-3 w-full md:w-auto">
                       {forum.status === 'active' && (
-                        <a 
-                          href={forum.url} 
-                          target="_blank" 
+                        <a
+                          href={forum.url}
+                          target="_blank"
                           rel="noopener noreferrer"
                           className="flex-1 md:flex-none text-center bg-white text-black px-4 py-2 font-bold border-2 border-black hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
                         >
                           Foruma Git <ExternalLink className="h-4 w-4" />
                         </a>
                       )}
-                      <button className="p-2 border-2 border-black hover:bg-gray-100 transition-colors">
+                      <button
+                        onClick={() => {
+                          setSelectedForum(forum.name);
+                          setIsSettingsModalOpen(true);
+                        }}
+                        className="p-2 border-2 border-black hover:bg-gray-100 transition-colors"
+                      >
                         <Settings className="h-5 w-5" />
                       </button>
                     </div>
@@ -342,7 +450,7 @@ const Dashboard = () => {
                   <input
                     type="text"
                     value={settingsForm.name}
-                    onChange={(e) => setSettingsForm({...settingsForm, name: e.target.value})}
+                    onChange={(e) => setSettingsForm({ ...settingsForm, name: e.target.value })}
                     className="w-full p-3 border-2 border-black focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
                     required
                   />
@@ -355,7 +463,7 @@ const Dashboard = () => {
                   <input
                     type="email"
                     value={settingsForm.email}
-                    onChange={(e) => setSettingsForm({...settingsForm, email: e.target.value})}
+                    onChange={(e) => setSettingsForm({ ...settingsForm, email: e.target.value })}
                     className="w-full p-3 border-2 border-black focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
                     required
                   />
@@ -371,7 +479,7 @@ const Dashboard = () => {
                       <input
                         type="password"
                         value={settingsForm.currentPassword}
-                        onChange={(e) => setSettingsForm({...settingsForm, currentPassword: e.target.value})}
+                        onChange={(e) => setSettingsForm({ ...settingsForm, currentPassword: e.target.value })}
                         className="w-full p-3 border-2 border-black focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
                         placeholder="••••••••"
                       />
@@ -382,7 +490,7 @@ const Dashboard = () => {
                       <input
                         type="password"
                         value={settingsForm.newPassword}
-                        onChange={(e) => setSettingsForm({...settingsForm, newPassword: e.target.value})}
+                        onChange={(e) => setSettingsForm({ ...settingsForm, newPassword: e.target.value })}
                         className="w-full p-3 border-2 border-black focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
                         placeholder="••••••••"
                       />
@@ -392,7 +500,7 @@ const Dashboard = () => {
                       <input
                         type="password"
                         value={settingsForm.confirmPassword}
-                        onChange={(e) => setSettingsForm({...settingsForm, confirmPassword: e.target.value})}
+                        onChange={(e) => setSettingsForm({ ...settingsForm, confirmPassword: e.target.value })}
                         className="w-full p-3 border-2 border-black focus:outline-none focus:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all"
                         placeholder="••••••••"
                       />
@@ -414,9 +522,15 @@ const Dashboard = () => {
           </div>
         )}
 
-        <DeployModal 
-          isOpen={isDeployModalOpen} 
+        <DeployModal
+          isOpen={isDeployModalOpen}
           onClose={() => setIsDeployModalOpen(false)}
+        />
+
+        <ForumSettingsModal
+          isOpen={isSettingsModalOpen}
+          onClose={() => setIsSettingsModalOpen(false)}
+          forumName={selectedForum}
         />
       </main>
     </div>

@@ -1,19 +1,3 @@
-# VibeHost - Discourse Forum Hosting Platform
-
-VibeHost is a SaaS platform that allows users to spawn their own Discourse forums on-demand via a React UI. Each forum runs in isolated Docker containers with automatic SSL certificate provisioning.
-
-## Architecture
-
-- **Infrastructure**: Single EC2 host running Ubuntu
-- **Reverse Proxy**: Traefik v2.10 with automatic Let's Encrypt SSL
-- **Backend**: Node.js API (Express) managing Docker containers
-- **Frontend**: React + Vite + Tailwind CSS
-- **Container Strategy**: Each forum gets its own docker-compose stack with:
-  - Discourse container
-  - PostgreSQL container
-  - Redis container
-
-## Prerequisites
 
 - Docker and Docker Compose installed
 - Node.js 18+ (for local development)
