@@ -107,6 +107,43 @@ const Dashboard = () => {
     }
   };
 
+  const refreshForums = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const response = await axios.get(`${apiUrl}/api/forums`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setForums(response.data.forums || []);
+
+      // Fetch stats for active forums
+      const activeForums = (response.data.forums || []).filter(f => f.status === 'active');
+      activeForums.forEach(forum => fetchForumStats(forum.name, token));
+
+      // Refresh usage summary
+      try {
+        const usageResponse = await axios.get(`${apiUrl}/api/usage`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setUsageSummary(usageResponse.data.usage);
+      } catch (err) {
+        console.error('Failed to fetch usage summary:', err);
+      }
+    } catch (err) {
+      console.error('Failed to refresh forums:', err);
+    }
+  };
+
+  const handleDeploySuccess = async () => {
+    // Refresh forum list after successful deployment
+    await refreshForums();
+    // Close modal after a short delay
+    setTimeout(() => {
+      setIsDeployModalOpen(false);
+    }, 2000);
+  };
+
   const handleLogout = () => {
     localStorage.clear();
     navigate('/login');
@@ -691,6 +728,7 @@ const Dashboard = () => {
         <DeployModal
           isOpen={isDeployModalOpen}
           onClose={() => setIsDeployModalOpen(false)}
+          onSuccess={handleDeploySuccess}
         />
 
         <ForumSettingsModal

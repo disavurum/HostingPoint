@@ -4,7 +4,7 @@ import axios from 'axios'
 import { motion, AnimatePresence } from 'framer-motion'
 import CustomDomainGuide from './CustomDomainGuide'
 
-const DeployModal = ({ isOpen, onClose }) => {
+const DeployModal = ({ isOpen, onClose, onSuccess }) => {
   // Check if running on localhost
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   const domain = isLocalhost ? 'localhost' : (import.meta.env.VITE_DOMAIN || 'hostingpoint.net')
@@ -36,6 +36,11 @@ const DeployModal = ({ isOpen, onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    // Prevent duplicate submissions
+    if (loading) {
+      return
+    }
     
     // If using custom domain, validate it
     if (useCustomDomain) {
@@ -90,6 +95,11 @@ const DeployModal = ({ isOpen, onClose }) => {
         setForumUrl(`http://localhost:${response.data.port}`)
       } else {
         setForumUrl(response.data.forumUrl)
+      }
+      
+      // Notify parent component of successful deployment
+      if (onSuccess) {
+        onSuccess(response.data)
       }
       } catch (error) {
         setStatus('error')
