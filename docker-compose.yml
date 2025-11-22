@@ -23,8 +23,6 @@ services:
     volumes:
       - backend-data:/app/data
       - /var/run/docker.sock:/var/run/docker.sock:ro
-    networks:
-      - coolify
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.vibehost-api.rule=Host(`api.${DOMAIN:-hostingpoint.net}`)"
@@ -32,7 +30,6 @@ services:
       - "traefik.http.routers.vibehost-api.tls=true"
       - "traefik.http.routers.vibehost-api.tls.certresolver=letsencrypt"
       - "traefik.http.services.vibehost-api.loadbalancer.server.port=3000"
-      - "coolify.managed=true"
 
   frontend:
     build:
@@ -40,8 +37,6 @@ services:
       dockerfile: Dockerfile
     container_name: vibehost-web
     restart: unless-stopped
-    networks:
-      - coolify
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.vibehost-web.rule=Host(`${DOMAIN:-hostingpoint.net}`) || Host(`www.${DOMAIN:-hostingpoint.net}`)"
@@ -49,11 +44,6 @@ services:
       - "traefik.http.routers.vibehost-web.tls=true"
       - "traefik.http.routers.vibehost-web.tls.certresolver=letsencrypt"
       - "traefik.http.services.vibehost-web.loadbalancer.server.port=80"
-      - "coolify.managed=true"
 
 volumes:
   backend-data:
-
-networks:
-  coolify:
-    external: true
