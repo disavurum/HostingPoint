@@ -47,6 +47,48 @@ backend-data:/app/data
 
 **ÖNEMLİ:** `/var/run/docker.sock` mount edilmezse, yeni forum kurulumları çalışmaz!
 
+#### Coolify'da Volume Ekleme Adımları:
+
+1. **Coolify Dashboard'a gidin**
+   - Service'inizi seçin (Backend)
+
+2. **"Volumes" veya "Storage" sekmesine gidin**
+   - Service detay sayfasında "Volumes" veya "Storage" sekmesini bulun
+
+3. **Docker Socket Mount (KRİTİK!):**
+   - **Host Path:** `/var/run/docker.sock`
+   - **Container Path:** `/var/run/docker.sock`
+   - **Read Only:** ✅ (işaretleyin)
+   - **Type:** Bind Mount (Host Path)
+
+4. **Data Volume:**
+   - **Volume Name:** `backend-data` (veya istediğiniz isim)
+   - **Container Path:** `/app/data`
+   - **Type:** Named Volume (Coolify otomatik oluşturur)
+
+5. **Customers Directory (Opsiyonel ama önerilir):**
+   - **Host Path:** `/data/hostingpoint/customers` (veya istediğiniz path)
+   - **Container Path:** `/app/customers`
+   - **Type:** Bind Mount
+   - **Not:** Bu, forum verilerinin kalıcı olması için önemli
+
+6. **Kaydet ve Redeploy:**
+   - Volume'ları ekledikten sonra "Save" butonuna tıklayın
+   - Service'i redeploy edin
+
+#### Alternatif: docker-compose.yml ile
+
+Eğer Coolify docker-compose.yml kullanıyorsa, `docker-compose.coolify.yml` dosyasındaki volume tanımlarını kullanabilirsiniz:
+
+```yaml
+volumes:
+  - /var/run/docker.sock:/var/run/docker.sock:ro
+  - backend-data:/app/data
+  - ./backend/customers:/app/customers  # Host path'i Coolify'da ayarlayın
+```
+
+**Not:** Coolify'da host path'ler genellikle `/data/` altında olur. Örneğin: `/data/coolify/volumes/your-service-name/`
+
 ### 3. Database Migration
 
 Yeni değişikliklerle birlikte database şeması güncellendi:
