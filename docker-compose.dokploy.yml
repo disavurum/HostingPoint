@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vibehost-api
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - DOMAIN=hostingpoint.net
+      - JWT_SECRET=${JWT_SECRET:-supersecretkey}
+      - DB_PATH=/app/data/database.sqlite
+      - FRONTEND_URL=https://hostingpoint.net
+    volumes:
+      - backend-data:/app/data
+    networks:
+      - dokploy-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vibehost-api.rule=Host(`api.hostingpoint.net`)"
+      - "traefik.http.routers.vibehost-api.entrypoints=websecure"
+      - "traefik.http.routers.vibehost-api.tls=true"
+      - "traefik.http.routers.vibehost-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.vibehost-api.loadbalancer.server.port=3000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=https://api.hostingpoint.net
+        - VITE_DOMAIN=hostingpoint.net
+    container_name: vibehost-web
+    restart: unless-stopped
+    networks:
+      - dokploy-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vibehost-web.rule=Host(`hostingpoint.net`) || Host(`www.hostingpoint.net`)"
+      - "traefik.http.routers.vibehost-web.entrypoints=websecure"
+      - "traefik.http.routers.vibehost-web.tls=true"
+      - "traefik.http.routers.vibehost-web.tls.certresolver=letsencrypt"
+      - "traefik.http.services.vibehost-web.loadbalancer.server.port=80"
+
+volumes:
+  backend-data:
+
+networks:
+  dokploy-network:
+    external: true
