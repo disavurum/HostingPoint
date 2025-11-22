@@ -6,8 +6,8 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install ALL dependencies (including dev deps for build, and optional deps for Alpine)
-RUN npm install
+# Remove lock file and install fresh (fixes Alpine rollup binary issue)
+RUN rm -f package-lock.json && npm install
 
 # Copy source code
 COPY . .
