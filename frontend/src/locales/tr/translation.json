@@ -1,0 +1,122 @@
+{
+    "nav": {
+        "features": "Özellikler",
+        "showcase": "Örnekler",
+        "pricing": "Fiyatlandırma",
+        "login": "Giriş Yap",
+        "dashboard": "Panel",
+        "start": "Hemen Başla"
+    },
+    "hero": {
+        "badge": "🚀 HostingPoint v2.0 Yayında",
+        "title_part1": "Topluluğunu",
+        "title_part2": "Özgürce",
+        "title_suffix": "İnşa Et.",
+        "subtitle": "Teknik bilgiye ihtiyacın yok. Kendi Discourse forumunu saniyeler içinde kur, yönet ve büyüt.",
+        "cta_primary": "Ücretsiz Başla",
+        "cta_secondary": "Demoyu İncele",
+        "cta_dashboard": "Panele Git"
+    },
+    "social_proof": {
+        "label": "EN İYİLERİN TERCİHİ"
+    },
+    "features": {
+        "modern": {
+            "title": "Modern Tartışmalar",
+            "desc": "Eski forumların aksine, Discourse modern, dinamik ve akıcı bir tartışma deneyimi sunar. Sayfalar arasında kaybolmak yerine sonsuz kaydırma ile akışta kalın."
+        },
+        "security": {
+            "title": "Güvenlik & Moderasyon",
+            "desc": "Otomatik spam koruması, güvenilirlik sistemi ve kapsamlı moderasyon araçları ile topluluğunuzu güvende tutun."
+        },
+        "mobile": {
+            "title": "Mobil Uyumlu",
+            "desc": "Her cihazda mükemmel görünen responsive tasarım. Üyeleriniz hareket halindeyken bile tartışmalara katılabilir."
+        }
+    },
+    "deep_dive_1": {
+        "title": "Kontrol Tamamen Sende.",
+        "desc": "Güçlü yönetim paneli ile topluluğunun her detayını özelleştir.",
+        "list": {
+            "themes": "Özelleştirilebilir Temalar",
+            "categories": "Gelişmiş Kategori Yönetimi",
+            "plugins": "Resmi Plugin Desteği"
+        }
+    },
+    "deep_dive_2": {
+        "title": "Tamamen Özelleştirilebilir.",
+        "desc": "Topluluğunuzun kimliğini yansıtın. Koyu moddan özel renk paletlerine kadar her şeyi markanıza göre ayarlayın.",
+        "cta": "Temaları İncele"
+    },
+    "stats": {
+        "title": "RAKAMLARLA HOSTINGPOINT",
+        "members": "Aktif Üye",
+        "uptime": "Uptime",
+        "countries": "Ülke",
+        "support": "Destek"
+    },
+    "pricing": {
+        "title": "Basit, Şeffaf Fiyatlandırma",
+        "subtitle": "Topluluğunuzun ihtiyaçlarına uygun planı seçin.",
+        "monthly": "/ay",
+        "plans": {
+            "starter": {
+                "name": "Başlangıç",
+                "price": "₺900",
+                "features": [
+                    "1 Forum",
+                    "10GB Depolama",
+                    "Sınırsız Üye",
+                    "Standart Destek"
+                ]
+            },
+            "pro": {
+                "name": "Pro",
+                "price": "₺2500",
+                "features": [
+                    "3 Forum",
+                    "50GB Depolama",
+                    "Öncelikli Destek",
+                    "Özel Domain",
+                    "Günlük Yedekleme"
+                ]
+            },
+            "enterprise": {
+                "name": "Kurumsal",
+                "price": "Özel",
+                "features": [
+                    "Sınırsız Forum",
+                    "Sınırsız Depolama",
+                    "7/24 Özel Destek",
+                    "SLA",
+                    "Özel Entegrasyonlar"
+                ]
+            }
+        },
+        "cta": "Planı Seç"
+    },
+    "cta_section": {
+        "title": "Fikrini Hayata Geçirmeye Hazır Mısın?",
+        "desc": "Deneme süresi yok, kredi kartı gerekmiyor. Sadece başla ve topluluğunu oluştur. İlk 14 gün bizden.",
+        "button": "Ücretsiz Başla",
+        "button_dashboard": "Panele Git"
+    },
+    "footer": {
+        "desc": "Modern topluluklar için en kolay Discourse hosting çözümü. Altyapıyı bize bırakın, siz içeriğe odaklanın.",
+        "product": "ÜRÜN",
+        "company": "ŞİRKET",
+        "rights": "© 2024 HostingPoint Inc. Tüm hakları saklıdır.",
+        "links": {
+            "features": "Özellikler",
+            "pricing": "Fiyatlandırma",
+            "showcase": "Örnekler",
+            "changelog": "Değişiklikler",
+            "about": "Hakkımızda",
+            "careers": "Kariyer",
+            "blog": "Blog",
+            "contact": "İletişim",
+            "privacy": "Gizlilik",
+            "terms": "Şartlar"
+        }
+    }
+}

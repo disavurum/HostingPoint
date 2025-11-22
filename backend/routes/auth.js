@@ -15,40 +15,40 @@ router.post('/register', authLimiter, async (req, res, next) => {
 
     // Validation
     if (!email || !password) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Missing required fields',
-        message: 'Email and password are required' 
+        message: 'Email and password are required'
       });
     }
 
     if (password.length < 8) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Invalid password',
-        message: 'Password must be at least 8 characters long' 
+        message: 'Password must be at least 8 characters long'
       });
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Invalid email format',
-        message: 'Please provide a valid email address' 
+        message: 'Please provide a valid email address'
       });
     }
 
     // Check if user already exists
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
-      return res.status(409).json({ 
+      return res.status(409).json({
         error: 'User already exists',
-        message: 'An account with this email already exists' 
+        message: 'An account with this email already exists'
       });
     }
 
     // Create user
     const user = await User.create(email, password, name);
-    
+
     logger.info('User registered:', { userId: user.id, email: user.email });
 
     // Generate token
@@ -60,7 +60,8 @@ router.post('/register', authLimiter, async (req, res, next) => {
       user: {
         id: user.id,
         email: user.email,
-        name: user.name
+        name: user.name,
+        is_admin: 0
       },
       token
     });
@@ -79,37 +80,42 @@ router.post('/login', authLimiter, async (req, res, next) => {
 
     // Validation
     if (!email || !password) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Missing required fields',
-        message: 'Email and password are required' 
+        message: 'Email and password are required'
       });
     }
 
     // Find user
     const user = await User.findByEmail(email);
     if (!user) {
-      return res.status(401).json({ 
+      logger.warn(`Login failed: User not found for email ${email}`);
+      return res.status(401).json({
         error: 'Invalid credentials',
-        message: 'Email or password is incorrect' 
+        message: 'Email or password is incorrect'
       });
     }
 
     // Verify password
     const isValid = await User.verifyPassword(user, password);
     if (!isValid) {
-      return res.status(401).json({ 
+      logger.warn(`Login failed: Invalid password for user ${email}`);
+      return res.status(401).json({
         error: 'Invalid credentials',
-        message: 'Email or password is incorrect' 
+        message: 'Email or password is incorrect'
       });
     }
 
     // Update last login
     await User.updateLastLogin(user.id);
 
+    console.log('User from DB:', JSON.stringify(user, null, 2));
+    console.log('User ID:', user.id);
+
     // Generate token
     const token = generateToken(user.id);
 
-    logger.info('User logged in:', { userId: user.id, email: user.email });
+    logger.info('User logged in successfully:', { userId: user.id, email: user.email });
 
     res.json({
       success: true,
@@ -118,11 +124,12 @@ router.post('/login', authLimiter, async (req, res, next) => {
         id: user.id,
         email: user.email,
         name: user.name,
-        isAdmin: user.is_admin === 1
+        is_admin: user.is_admin
       },
       token
     });
   } catch (error) {
+    logger.error('Login error:', error);
     next(error);
   }
 });
@@ -135,9 +142,9 @@ router.get('/me', authenticate, async (req, res, next) => {
   try {
     const user = await User.findById(req.userId);
     if (!user) {
-      return res.status(404).json({ 
+      return res.status(404).json({
         error: 'User not found',
-        message: 'User does not exist' 
+        message: 'User does not exist'
       });
     }
 
@@ -147,7 +154,7 @@ router.get('/me', authenticate, async (req, res, next) => {
         id: user.id,
         email: user.email,
         name: user.name,
-        isAdmin: user.is_admin === 1,
+        is_admin: user.is_admin,
         createdAt: user.created_at
       }
     });
@@ -180,7 +187,7 @@ router.put('/profile', authenticate, async (req, res, next) => {
       // Fetch user with password hash to verify
       const userWithPass = await User.findByEmail(user.email);
       const isValid = await User.verifyPassword(userWithPass, currentPassword);
-      
+
       if (!isValid) {
         return res.status(401).json({ error: 'Current password is incorrect' });
       }
@@ -202,7 +209,7 @@ router.put('/profile', authenticate, async (req, res, next) => {
         id: updatedUser.id,
         email: updatedUser.email,
         name: updatedUser.name,
-        isAdmin: updatedUser.is_admin === 1
+        is_admin: updatedUser.is_admin
       }
     });
   } catch (error) {

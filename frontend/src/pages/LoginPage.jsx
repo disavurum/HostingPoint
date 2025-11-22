@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../utils/api';
 import { getApiUrl } from '../utils/api';
 
 const LoginPage = () => {
@@ -23,10 +23,17 @@ const LoginPage = () => {
         password
       });
 
+      console.log('Login response:', response.data);
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
-      navigate('/dashboard');
+      console.log('Token saved to localStorage:', localStorage.getItem('token'));
+      // Force a hard redirect to ensure state is fresh, with a small delay
+      setTimeout(() => {
+        console.log('Redirecting to dashboard...');
+        window.location.href = '/dashboard';
+      }, 100);
     } catch (err) {
+      console.error('Login error:', err);
       setError(err.response?.data?.message || 'Giriş yapılamadı. Lütfen bilgilerinizi kontrol edin.');
     } finally {
       setLoading(false);
@@ -39,23 +46,23 @@ const LoginPage = () => {
       <div className="hidden lg:flex lg:w-1/2 bg-[#ffc900] border-r-2 border-black flex-col justify-center p-12 relative overflow-hidden">
         <div className="relative z-10 max-w-lg mx-auto">
           <h1 className="text-6xl font-black mb-6 tracking-tight">
-            Topluluğuna <br/>
+            Topluluğuna <br />
             Geri Dön.
           </h1>
           <p className="text-xl font-medium mb-12 leading-relaxed">
             Yönetim paneline eriş, forumlarını kontrol et ve topluluğunu büyütmeye devam et.
           </p>
-          
+
           <div className="bg-white border-2 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transform rotate-2">
             <div className="flex items-center gap-4 mb-4">
               <div className="w-12 h-12 bg-black rounded-full"></div>
               <div>
-                <div className="font-bold text-lg">VibeHost</div>
-                <div className="text-sm text-gray-500">Community Platform</div>
+                <div className="font-bold text-lg">HostingPoint</div>
+                <div className="text-sm text-gray-500">Discourse Forum Hosting</div>
               </div>
             </div>
             <p className="font-medium">
-              "VibeHost sayesinde topluluğumuzu 2 ayda 3 katına çıkardık. Altyapı derdi olmadan sadece içeriğe odaklanıyoruz."
+              "HostingPoint sayesinde Discourse forumlarımızı kolayca kuruyoruz. EC2 sunucumuzda otomatik kurulum ve yönetim."
             </p>
           </div>
         </div>
@@ -96,7 +103,12 @@ const LoginPage = () => {
             </div>
 
             <div>
-              <label className="block font-bold mb-2">Şifre</label>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block font-bold">Şifre</label>
+                <Link to="/forgot-password" className="text-sm font-bold underline hover:text-gray-600">
+                  Şifremi Unuttum?
+                </Link>
+              </div>
               <input
                 type="password"
                 value={password}

@@ -173,3 +173,4 @@ For issues or questions, check:
 - Traefik logs: `docker-compose logs traefik`
 - Container status: `docker-compose ps`
 
+

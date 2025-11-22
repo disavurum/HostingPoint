@@ -18,6 +18,7 @@ const EmailService = require('./services/EmailService');
 const MonitorService = require('./services/MonitorService');
 const BillingService = require('./services/BillingService');
 const BackupService = require('./services/BackupService');
+const LimitService = require('./services/LimitService');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -87,7 +88,7 @@ app.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    service: 'vibehost-backend',
+    service: 'hostingpoint-backend',
     version: '1.0.0'
   });
 });
@@ -98,76 +99,157 @@ app.use('/api/auth', authRoutes);
 // Apply general rate limiting to all API routes (temporarily disabled)
 // app.use('/api', apiLimiter);
 
+// Generate random subdomain
+function generateRandomSubdomain() {
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let result = 'app-';
+  for (let i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
 // Deploy forum endpoint (rate limiting temporarily disabled)
 app.post('/api/deploy', authenticate, async (req, res, next) => {
   try {
-    const { forumName, email } = req.body;
+    const { forumName, customDomain, autoGenerate } = req.body;
 
-    // Validation
-    if (!forumName || !email) {
+    let finalForumName = forumName;
+    let finalDomain = DOMAIN;
+    let customDomainValue = null;
+
+    // Handle custom domain
+    if (customDomain) {
+      // Validate custom domain format
+      const domainRegex = /^([a-z0-9]+(-[a-z0-9]+)*\.)+[a-z]{2,}$/i;
+      if (!domainRegex.test(customDomain)) {
+        return res.status(400).json({
+          error: 'Invalid domain format',
+          message: 'Please provide a valid domain name (e.g., example.com)'
+        });
+      }
+
+      // For custom domain, use the domain as the forum name
+      finalForumName = customDomain.replace(/\./g, '-').toLowerCase();
+      finalDomain = customDomain;
+      customDomainValue = customDomain;
+    } else {
+      // Handle auto-generated or manual subdomain
+      if (autoGenerate || !forumName) {
+        // Generate random subdomain
+        let attempts = 0;
+        do {
+          finalForumName = generateRandomSubdomain();
+          const existing = await Forum.findByName(finalForumName);
+          if (!existing) break;
+          attempts++;
+        } while (attempts < 10);
+
+        if (attempts >= 10) {
+          return res.status(500).json({
+            error: 'Failed to generate unique subdomain',
+            message: 'Please try again or provide a custom subdomain name'
+          });
+        }
+      } else {
+        // Validate forum name format (alphanumeric and hyphens only)
+        if (!/^[a-z0-9-]+$/.test(forumName)) {
+          return res.status(400).json({
+            error: 'Invalid forum name',
+            message: 'Forum name must contain only lowercase letters, numbers, and hyphens'
+          });
+        }
+        finalForumName = forumName;
+      }
+
+      // Check if forum already exists in database
+      const existingForum = await Forum.findByName(finalForumName);
+      if (existingForum) {
+        return res.status(409).json({
+          error: 'Forum already exists',
+          message: `Forum "${finalForumName}" already exists`
+        });
+      }
+    }
+
+    // Use logged-in user's email
+    const email = req.user.email;
+    if (!email) {
       return res.status(400).json({
-        error: 'Missing required fields',
-        message: 'forumName and email are required'
+        error: 'User email not found',
+        message: 'User email is required for forum deployment'
       });
     }
 
-    // Validate forum name format (alphanumeric and hyphens only)
-    if (!/^[a-z0-9-]+$/.test(forumName)) {
-      return res.status(400).json({
-        error: 'Invalid forum name',
-        message: 'Forum name must contain only lowercase letters, numbers, and hyphens'
+    // Check deployment limits before creating forum
+    const canDeploy = await LimitService.canDeployForum(req.userId);
+    if (!canDeploy.allowed) {
+      return res.status(403).json({
+        error: 'Limit exceeded',
+        message: canDeploy.message,
+        limit: canDeploy.limit,
+        current: canDeploy.current
       });
     }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({
-        error: 'Invalid email format',
-        message: 'Please provide a valid email address'
-      });
-    }
-
-    // Check if forum already exists in database
-    const existingForum = await Forum.findByName(forumName);
-    if (existingForum) {
-      return res.status(409).json({
-        error: 'Forum already exists',
-        message: `Forum "${forumName}" already exists`
+    // Check storage limit
+    const storageCheck = await LimitService.checkStorageLimit(req.userId);
+    if (storageCheck.exceeded) {
+      return res.status(403).json({
+        error: 'Storage limit exceeded',
+        message: storageCheck.message,
+        usage: storageCheck.usage,
+        limit: storageCheck.limit
       });
     }
 
     // Create forum record in database
-    const forumRecord = await Forum.create(forumName, req.userId, email, DOMAIN);
+    const forumRecord = await Forum.create(finalForumName, req.userId, email, finalDomain, customDomainValue);
 
     logger.info('Starting forum deployment:', {
-      forumName,
+      forumName: finalForumName,
+      customDomain: customDomainValue,
       userId: req.userId,
       email
     });
 
+    // Check if localhost
+    const isLocalhost = finalDomain === 'localhost' || finalDomain === '127.0.0.1' || DOMAIN === 'localhost' || DOMAIN === '127.0.0.1';
+
     // Deploy forum
-    const result = await DeployService.deployForum(forumName, email, DOMAIN);
+    const result = await DeployService.deployForum(finalForumName, email, finalDomain, customDomainValue);
 
     // Update forum status
-    await Forum.updateStatus(forumName, 'active');
+    await Forum.updateStatus(finalForumName, 'active');
 
-    const forumUrl = `https://${forumName}.${DOMAIN}`;
+    // Generate forum URL based on environment
+    let forumUrl;
+    if (customDomainValue) {
+      forumUrl = `https://${customDomainValue}`;
+    } else if (isLocalhost) {
+      // For localhost, use the port from deployment result
+      const port = result.port || 3001;
+      forumUrl = `http://localhost:${port}`;
+    } else {
+      forumUrl = `https://${finalForumName}.${DOMAIN}`;
+    }
 
     // Send welcome email
-    EmailService.sendWelcomeEmail(email, forumName, forumUrl).catch(err => {
+    EmailService.sendWelcomeEmail(email, finalForumName, forumUrl).catch(err => {
       logger.error('Failed to send welcome email:', err);
     });
 
-    logger.info('Forum deployed successfully:', { forumName, forumUrl });
+    logger.info('Forum deployed successfully:', { forumName: finalForumName, forumUrl });
 
     res.json({
       success: true,
       message: 'Forum deployed successfully',
       forumUrl,
+      port: result.port || null,
       forum: {
         id: forumRecord.id,
-        name: forumName,
+        name: finalForumName,
+        customDomain: customDomainValue,
         status: 'active',
         url: forumUrl
       },
@@ -188,13 +270,16 @@ app.post('/api/deploy', authenticate, async (req, res, next) => {
       });
 
       // Send failure email
-      EmailService.sendDeploymentFailedEmail(
-        req.body.email,
-        req.body.forumName,
-        error.message
-      ).catch(err => {
-        logger.error('Failed to send failure email:', err);
-      });
+      const userEmail = req.user?.email;
+      if (userEmail) {
+        EmailService.sendDeploymentFailedEmail(
+          userEmail,
+          req.body.forumName,
+          error.message
+        ).catch(err => {
+          logger.error('Failed to send failure email:', err);
+        });
+      }
     }
 
     next(error);
@@ -347,6 +432,16 @@ app.get('/api/admin/forums', authenticate, isAdmin, async (req, res, next) => {
   }
 });
 
+// Get user usage summary
+app.get('/api/usage', authenticate, async (req, res, next) => {
+  try {
+    const usage = await LimitService.getUserUsageSummary(req.userId);
+    res.json({ success: true, usage });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // List user's forums (authenticated)
 app.get('/api/forums', authenticate, async (req, res, next) => {
   try {
@@ -485,7 +580,7 @@ async function startServer() {
   await initializeDatabase();
 
   app.listen(PORT, '0.0.0.0', () => {
-    logger.info(`VibeHost Backend API running on port ${PORT}`);
+    logger.info(`HostingPoint Backend API running on port ${PORT}`);
     logger.info(`Domain: ${DOMAIN}`);
     logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
   });

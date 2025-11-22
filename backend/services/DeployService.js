@@ -5,7 +5,21 @@ const { promisify } = require('util');
 const Docker = require('dockerode');
 const { v4: uuidv4 } = require('uuid');
 
-const execAsync = promisify(exec);
+// Custom execAsync with increased buffer for Docker output
+const execAsync = (command, options = {}) => {
+  return new Promise((resolve, reject) => {
+    exec(command, { 
+      maxBuffer: 10 * 1024 * 1024, // 10MB buffer
+      ...options 
+    }, (error, stdout, stderr) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve({ stdout, stderr });
+      }
+    });
+  });
+};
 const docker = new Docker({ socketPath: '/var/run/docker.sock' });
 
 const CUSTOMERS_DIR = path.join(__dirname, '../customers');
@@ -19,7 +33,7 @@ class DeployService {
   /**
    * Deploy a new Discourse forum
    */
-  static async deployForum(forumName, email, domain) {
+  static async deployForum(forumName, email, domain, customDomain = null) {
     const customerDir = path.join(CUSTOMERS_DIR, forumName);
 
     // Check if forum already exists
@@ -35,13 +49,19 @@ class DeployService {
       const dbPassword = uuidv4().replace(/-/g, '');
       const redisPassword = uuidv4().replace(/-/g, '');
 
+      // Check if localhost to generate port
+      const isLocalhost = domain === 'localhost' || domain === '127.0.0.1';
+      const discoursePort = isLocalhost ? Math.floor(Math.random() * 999) + 3001 : null;
+      
       // Generate docker-compose.yml
       const composeContent = this.generateDockerCompose(
         forumName,
         email,
         domain,
         dbPassword,
-        redisPassword
+        redisPassword,
+        discoursePort,
+        customDomain
       );
 
       const composePath = path.join(customerDir, 'docker-compose.yml');
@@ -67,7 +87,8 @@ class DeployService {
       return {
         forumName,
         status: 'deployed',
-        containers: status.containers
+        containers: status.containers,
+        port: discoursePort
       };
     } catch (error) {
       // Cleanup on failure
@@ -83,14 +104,29 @@ class DeployService {
   /**
    * Generate docker-compose.yml content for a forum
    */
-  static generateDockerCompose(forumName, email, domain, dbPassword, redisPassword) {
-    const fullDomain = `${forumName}.${domain}`;
+  static generateDockerCompose(forumName, email, domain, dbPassword, redisPassword, discoursePort = null, customDomain = null) {
+    const fullDomain = customDomain || `${forumName}.${domain}`;
+    const isLocalhost = domain === 'localhost' || domain === '127.0.0.1';
+    
+    // Traefik labels for production, port mapping for localhost
+    const traefikLabels = isLocalhost ? '' : `
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${forumName}.rule=Host(\`${fullDomain}\`)"
+      - "traefik.http.routers.${forumName}.entrypoints=websecure"
+      - "traefik.http.routers.${forumName}.tls=true"
+      - "traefik.http.routers.${forumName}.tls.certresolver=letsencrypt"
+      - "traefik.http.services.${forumName}.loadbalancer.server.port=3000"`;
+    
+    const portMapping = isLocalhost ? `
+    ports:
+      - "${discoursePort}:3000"` : '';
 
     return `version: '3.8'
 
 services:
   postgres-${forumName}:
-    image: bitnami/postgresql:15
+    image: postgres:15-alpine
     container_name: discourse-postgres-${forumName}
     restart: unless-stopped
     environment:
@@ -99,7 +135,7 @@ services:
       - POSTGRES_DB=discourse
       - ALLOW_EMPTY_PASSWORD=no
     volumes:
-      - postgres_data_${forumName}:/bitnami/postgresql/data
+      - postgres_data_${forumName}:/var/lib/postgresql/data
     networks:
       - discourse_${forumName}
     healthcheck:
@@ -109,14 +145,14 @@ services:
       retries: 5
 
   redis-${forumName}:
-    image: bitnami/redis:7
+    image: redis:7-alpine
     container_name: discourse-redis-${forumName}
     restart: unless-stopped
     environment:
       - REDIS_PASSWORD=${redisPassword}
       - ALLOW_EMPTY_PASSWORD=no
     volumes:
-      - redis_data_${forumName}:/bitnami/redis/data
+      - redis_data_${forumName}:/data
     networks:
       - discourse_${forumName}
     healthcheck:
@@ -126,7 +162,7 @@ services:
       retries: 5
 
   discourse-${forumName}:
-    image: bitnami/discourse:latest
+    image: discourse/discourse:latest
     container_name: discourse-${forumName}
     restart: unless-stopped
     depends_on:
@@ -155,18 +191,12 @@ services:
       - REDIS_HOST=redis-${forumName}
       - REDIS_PORT_NUMBER=6379
       - REDIS_PASSWORD=${redisPassword}
+    ${portMapping ? `ports:
+      - "${discoursePort}:3000"` : ''}
     volumes:
-      - discourse_data_${forumName}:/bitnami/discourse
+      - discourse_data_${forumName}:/var/www/discourse
     networks:
-      - discourse_${forumName}
-      - coolify
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.${forumName}.rule=Host(\`${fullDomain}\`)"
-      - "traefik.http.routers.${forumName}.entrypoints=websecure"
-      - "traefik.http.routers.${forumName}.tls=true"
-      - "traefik.http.routers.${forumName}.tls.certresolver=letsencrypt"
-      - "traefik.http.services.${forumName}.loadbalancer.server.port=3000"
+      - discourse_${forumName}${isLocalhost ? '' : '\n      - coolify'}${traefikLabels}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000"]
       interval: 30s
@@ -180,9 +210,7 @@ volumes:
 
 networks:
   discourse_${forumName}:
-    driver: bridge
-  coolify:
-    external: true
+    driver: bridge${isLocalhost ? '' : '\n  coolify:\n    external: true'}
 `;
   }
 

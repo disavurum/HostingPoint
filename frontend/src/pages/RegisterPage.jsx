@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../utils/api';
 import { getApiUrl } from '../utils/api';
 
 const RegisterPage = () => {
@@ -27,7 +27,10 @@ const RegisterPage = () => {
 
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
-      navigate('/dashboard');
+      // Force a hard redirect to ensure state is fresh, with a small delay
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 100);
     } catch (err) {
       setError(err.response?.data?.message || 'Kayıt yapılamadı. Lütfen bilgilerinizi kontrol edin.');
     } finally {
@@ -41,13 +44,13 @@ const RegisterPage = () => {
       <div className="hidden lg:flex lg:w-1/2 bg-[#b2fffb] border-r-2 border-black flex-col justify-center p-12 relative overflow-hidden">
         <div className="relative z-10 max-w-lg mx-auto">
           <h1 className="text-6xl font-black mb-6 tracking-tight">
-            Topluluğunu <br/>
+            Topluluğunu <br />
             İnşa Et.
           </h1>
           <p className="text-xl font-medium mb-12 leading-relaxed">
             Binlerce topluluk yöneticisine katıl. Kod yazmadan kendi Discourse forumunu başlat.
           </p>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white border-2 border-black p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
               <div className="font-black text-3xl mb-2">14 Gün</div>
@@ -70,7 +73,7 @@ const RegisterPage = () => {
           <div className="mb-12">
             <Link to="/" className="flex items-center gap-2 mb-8">
               <div className="w-8 h-8 bg-black rounded-full"></div>
-              <span className="text-2xl font-bold tracking-tight">VibeHost</span>
+              <span className="text-2xl font-bold tracking-tight">HostingPoint</span>
             </Link>
             <h2 className="text-4xl font-black mb-2">Kayıt Ol</h2>
             <p className="text-gray-600 font-medium">Birkaç saniye içinde hesabınızı oluşturun.</p>

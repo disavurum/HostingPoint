@@ -6,14 +6,27 @@ class Forum {
   }
 
   async createTable() {
+    // Check if custom_domain column exists, if not add it
+    try {
+      const tableInfo = await db.query("PRAGMA table_info(forums)");
+      const hasCustomDomain = tableInfo.some(col => col.name === 'custom_domain');
+      
+      if (!hasCustomDomain) {
+        await db.run("ALTER TABLE forums ADD COLUMN custom_domain TEXT");
+      }
+    } catch (err) {
+      // Table might not exist yet, that's okay
+    }
+    
     const query = `
       CREATE TABLE IF NOT EXISTS forums (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(255) UNIQUE NOT NULL,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL,
         user_id INTEGER NOT NULL,
-        email VARCHAR(255) NOT NULL,
-        domain VARCHAR(255) NOT NULL,
-        status VARCHAR(50) DEFAULT 'deploying',
+        email TEXT NOT NULL,
+        domain TEXT NOT NULL,
+        custom_domain TEXT,
+        status TEXT DEFAULT 'deploying',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -27,14 +40,14 @@ class Forum {
     }
   }
 
-  async create(name, userId, email, domain) {
+  async create(name, userId, email, domain, customDomain = null) {
     const query = `
-      INSERT INTO forums (name, user_id, email, domain, status) 
-      VALUES (?, ?, ?, ?, 'deploying') 
+      INSERT INTO forums (name, user_id, email, domain, custom_domain, status) 
+      VALUES (?, ?, ?, ?, ?, 'deploying') 
     `;
     try {
-      const result = await db.run(query, [name, userId, email, domain]);
-      return { id: result.id, name, user_id: userId, email, domain, status: 'deploying' };
+      const result = await db.run(query, [name, userId, email, domain, customDomain]);
+      return { id: result.id, name, user_id: userId, email, domain, custom_domain: customDomain, status: 'deploying' };
     } catch (err) {
       throw err;
     }

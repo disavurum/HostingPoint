@@ -36,7 +36,7 @@ const consoleFormat = winston.format.combine(
 const logger = winston.createLogger({
   level: LOG_LEVEL,
   format: logFormat,
-  defaultMeta: { service: 'vibehost-backend' },
+  defaultMeta: { service: 'hostingpoint-backend' },
   transports: [
     // Write all logs to file
     new winston.transports.File({ 

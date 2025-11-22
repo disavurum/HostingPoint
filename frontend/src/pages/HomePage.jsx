@@ -1,15 +1,36 @@
 import { useState, useEffect } from 'react'
 import { ArrowRight, Check, Globe, Layout, Shield, Users, Zap, Menu } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import DeployModal from '../components/DeployModal'
 import { getApiUrl } from '../utils/api'
+
+// Currency conversion rates (approximate)
+const CURRENCY_RATES = {
+  USD: { TRY: 34.5, symbol: '$' },
+  TRY: { USD: 1/34.5, symbol: '₺' }
+}
+
+const PRICING_USD = {
+  starter: 29,
+  pro: 79,
+  enterprise: 'Custom'
+}
+
+const PRICING_TRY = {
+  starter: 600,
+  pro: 2500,
+  enterprise: 'Özel'
+}
 
 const API_URL = getApiUrl()
 
 function HomePage() {
+  const { t } = useTranslation()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [stars, setStars] = useState([])
   const [user, setUser] = useState(null)
+  const [currency, setCurrency] = useState('TRY') // Default to TRY
 
   const carouselImages = [
     "https://canada1.discourse-cdn.com/discover/original/2X/7/7034d28025e75a326950174b531286f5946ff021.png",
@@ -54,13 +75,13 @@ function HomePage() {
         <div className="container mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-black rounded-full"></div>
-            <span className="text-2xl font-bold tracking-tight">VibeHost</span>
+            <span className="text-2xl font-bold tracking-tight">HostingPoint</span>
           </div>
-          
+
           <div className="hidden md:flex items-center gap-8 font-medium">
-            <a href="#features" className="hover:underline decoration-2">Özellikler</a>
-            <a href="#showcase" className="hover:underline decoration-2">Örnekler</a>
-            <a href="#pricing" className="hover:underline decoration-2">Fiyatlandırma</a>
+            <a href="#features" className="hover:underline decoration-2">{t('nav.features')}</a>
+            <a href="#showcase" className="hover:underline decoration-2">{t('nav.showcase')}</a>
+            <a href="#pricing" className="hover:underline decoration-2">{t('nav.pricing')}</a>
           </div>
 
           <div className="flex items-center gap-4">
@@ -72,19 +93,19 @@ function HomePage() {
                   </div>
                   {user.name}
                 </a>
-                <a href="/dashboard" 
+                <a href="/dashboard"
                   className="bg-black text-white px-6 py-3 font-bold hover:bg-gray-800 transition-colors border-2 border-black shadow-[4px_4px_0px_0px_#9ca3af] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] block text-center"
                 >
-                  Dashboard
+                  {t('nav.dashboard')}
                 </a>
               </>
             ) : (
               <>
-                <a href="/login" className="hidden md:block font-medium hover:underline">Giriş Yap</a>
-                <a href="/register" 
+                <a href="/login" className="hidden md:block font-medium hover:underline">{t('nav.login')}</a>
+                <a href="/register"
                   className="bg-black text-white px-6 py-3 font-bold hover:bg-gray-800 transition-colors border-2 border-black shadow-[4px_4px_0px_0px_#9ca3af] hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] block text-center"
                 >
-                  Hemen Başla
+                  {t('nav.start')}
                 </a>
               </>
             )}
@@ -97,42 +118,42 @@ function HomePage() {
         <div className="container mx-auto px-6 py-16 md:py-24 grid lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-8">
             <div className="inline-block bg-white border-2 border-black px-4 py-2 font-bold transform -rotate-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
-              🚀 VibeHost v2.0 Yayında
+              {t('hero.badge')}
             </div>
             <h1 className="text-5xl md:text-7xl font-black leading-tight tracking-tight">
-              Topluluğunu <br/>
-              <span className="bg-white px-2 border-2 border-black inline-block transform rotate-1">Özgürce</span> İnşa Et.
+              {t('hero.title_part1')} <br />
+              <span className="bg-white px-2 border-2 border-black inline-block transform rotate-1">{t('hero.title_part2')}</span> {t('hero.title_suffix')}
             </h1>
             <p className="text-xl font-medium leading-relaxed max-w-md">
-              Teknik bilgiye ihtiyacın yok. Kendi Discourse forumunu saniyeler içinde kur, yönet ve büyüt.
+              {t('hero.subtitle')}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
               {user ? (
-                <a href="/dashboard" 
+                <a href="/dashboard"
                   className="bg-black text-white px-8 py-4 text-lg font-bold border-2 border-black shadow-[6px_6px_0px_0px_#fff] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all flex items-center gap-2 justify-center"
                 >
-                  Panele Git <ArrowRight className="h-5 w-5" />
+                  {t('hero.cta_dashboard')} <ArrowRight className="h-5 w-5" />
                 </a>
               ) : (
-                <a href="/register" 
+                <a href="/register"
                   className="bg-black text-white px-8 py-4 text-lg font-bold border-2 border-black shadow-[6px_6px_0px_0px_#fff] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all flex items-center gap-2 justify-center"
                 >
-                  Ücretsiz Başla <ArrowRight className="h-5 w-5" />
+                  {t('hero.cta_primary')} <ArrowRight className="h-5 w-5" />
                 </a>
               )}
               <button className="bg-white text-black px-8 py-4 text-lg font-bold border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[3px] hover:translate-y-[3px] transition-all">
-                Demoyu İncele
+                {t('hero.cta_secondary')}
               </button>
             </div>
           </div>
           <div className="relative flex justify-center lg:justify-end">
             {/* Hero Image */}
             <div className="w-full max-w-[600px] bg-white border-2 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] overflow-hidden">
-               <img 
-                 src="https://discourse.org/a/img/customers/tech_openai-2x.jpg" 
-                 alt="Discourse Hero"
-                 className="w-full h-auto object-cover"
-               />
+              <img
+                src="https://discourse.org/a/img/customers/tech_openai-2x.jpg"
+                alt="Discourse Hero"
+                className="w-full h-auto object-cover"
+              />
             </div>
           </div>
         </div>
@@ -159,7 +180,7 @@ function HomePage() {
         </div>
 
         <div className="container mx-auto px-6 relative z-10">
-          <p className="text-center font-bold mb-12 text-gray-400 uppercase tracking-widest text-sm">En İyilerin Tercihi</p>
+          <p className="text-center font-bold mb-12 text-gray-400 uppercase tracking-widest text-sm">{t('social_proof.label')}</p>
           <div className="flex flex-wrap justify-center items-center gap-16 opacity-100 transition-all">
             <a href="https://community.openai.com/" target="_blank" rel="noreferrer" className="hover:scale-105 transition-transform brightness-0 invert opacity-80 hover:opacity-100">
               <img src="/images/Frame 2 (1).svg" alt="OpenAI Logo" className="h-8 w-auto" />
@@ -181,21 +202,21 @@ function HomePage() {
             <div className="w-16 h-16 bg-[#ff90e8] border-2 border-black mb-6 flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group-hover:shadow-none group-hover:translate-x-[2px] group-hover:translate-y-[2px] transition-all">
               <Zap className="h-8 w-8" />
             </div>
-            
+
             <div className="mb-8 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden bg-white">
-               <video 
-                 src="https://discourse.org/a/vid/scroll.webm" 
-                 autoPlay 
-                 loop 
-                 muted 
-                 playsInline
-                 className="w-full h-auto"
-               />
+              <video
+                src="https://discourse.org/a/vid/scroll.webm"
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="w-full h-auto"
+              />
             </div>
 
-            <h3 className="text-2xl font-bold mb-4">Modern Tartışmalar</h3>
+            <h3 className="text-2xl font-bold mb-4">{t('features.modern.title')}</h3>
             <p className="font-medium text-gray-600 leading-relaxed">
-              Eski forumların aksine, Discourse modern, dinamik ve akıcı bir tartışma deneyimi sunar. Sayfalar arasında kaybolmak yerine sonsuz kaydırma ile akışta kalın.
+              {t('features.modern.desc')}
             </p>
           </div>
           <div className="p-12 hover:bg-blue-50 transition-colors group">
@@ -203,17 +224,17 @@ function HomePage() {
               <Shield className="h-8 w-8 text-white" />
             </div>
 
-             <div className="mb-8 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden bg-white">
-               <img 
-                 src="https://discourse.org/a/img/features/moderation-2x.jpg" 
-                 alt="Moderation"
-                 className="w-full h-auto"
-               />
+            <div className="mb-8 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden bg-white">
+              <img
+                src="https://discourse.org/a/img/features/moderation-2x.jpg"
+                alt="Moderation"
+                className="w-full h-auto"
+              />
             </div>
 
-            <h3 className="text-2xl font-bold mb-4">Güvenlik & Moderasyon</h3>
+            <h3 className="text-2xl font-bold mb-4">{t('features.security.title')}</h3>
             <p className="font-medium text-gray-600 leading-relaxed">
-              Otomatik spam koruması, güvenilirlik sistemi ve kapsamlı moderasyon araçları ile topluluğunuzu güvende tutun.
+              {t('features.security.desc')}
             </p>
           </div>
           <div className="p-12 hover:bg-pink-50 transition-colors group">
@@ -222,16 +243,16 @@ function HomePage() {
             </div>
 
             <div className="mb-8 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden bg-white">
-               <img 
-                 src="https://discourse.org/a/img/features/mobile-2x.png" 
-                 alt="Mobile Friendly"
-                 className="w-full h-auto"
-               />
+              <img
+                src="https://discourse.org/a/img/features/mobile-2x.png"
+                alt="Mobile Friendly"
+                className="w-full h-auto"
+              />
             </div>
 
-            <h3 className="text-2xl font-bold mb-4">Mobil Uyumlu</h3>
+            <h3 className="text-2xl font-bold mb-4">{t('features.mobile.title')}</h3>
             <p className="font-medium text-gray-600 leading-relaxed">
-              Her cihazda mükemmel görünen responsive tasarım. Üyeleriniz hareket halindeyken bile tartışmalara katılabilir.
+              {t('features.mobile.desc')}
             </p>
           </div>
         </div>
@@ -241,77 +262,188 @@ function HomePage() {
       <section className="border-b-2 border-black">
         <div className="grid md:grid-cols-2">
           <div className="p-12 md:p-24 flex flex-col justify-center bg-[#b2fffb]">
-            <h2 className="text-4xl md:text-5xl font-black mb-6">Kontrol Tamamen Sende.</h2>
+            <h2 className="text-4xl md:text-5xl font-black mb-6">{t('deep_dive_1.title')}</h2>
             <p className="text-xl font-medium mb-8">
-              Güçlü yönetim paneli ile topluluğunun her detayını özelleştir.
+              {t('deep_dive_1.desc')}
             </p>
             <ul className="space-y-4 font-bold">
               <li className="flex items-center gap-3">
                 <Check className="h-6 w-6 bg-black text-white rounded-full p-1" />
-                Özelleştirilebilir Temalar
+                {t('deep_dive_1.list.themes')}
               </li>
               <li className="flex items-center gap-3">
                 <Check className="h-6 w-6 bg-black text-white rounded-full p-1" />
-                Gelişmiş Kategori Yönetimi
+                {t('deep_dive_1.list.categories')}
               </li>
               <li className="flex items-center gap-3">
                 <Check className="h-6 w-6 bg-black text-white rounded-full p-1" />
-                Resmi Plugin Desteği
+                {t('deep_dive_1.list.plugins')}
               </li>
             </ul>
           </div>
           <div className="bg-gray-100 border-l-2 border-black p-12 flex items-center justify-center relative overflow-hidden">
-             <div className="absolute inset-0 bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:24px_24px] opacity-5"></div>
-             <div className="w-full h-full min-h-[400px] bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center overflow-hidden">
-               <img 
-                 src="https://d11a6trkgmumsb.cloudfront.net/original/4X/f/e/1/fe100ef4d40c4082c248a9e7ebe48717c1e65a62.png" 
-                 alt="Admin Panel"
-                 className="w-full h-full object-cover"
-               />
-             </div>
+            <div className="absolute inset-0 bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:24px_24px] opacity-5"></div>
+            <div className="w-full h-full min-h-[400px] bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center overflow-hidden">
+              <img
+                src="https://d11a6trkgmumsb.cloudfront.net/original/4X/f/e/1/fe100ef4d40c4082c248a9e7ebe48717c1e65a62.png"
+                alt="Admin Panel"
+                className="w-full h-full object-cover"
+              />
+            </div>
           </div>
         </div>
       </section>
 
-       {/* Feature Deep Dive 2 - Customizable */}
-       <section className="border-b-2 border-black">
+      {/* Feature Deep Dive 2 - Customizable */}
+      <section className="border-b-2 border-black">
         <div className="grid md:grid-cols-2">
           <div className="bg-gray-100 border-r-2 border-black p-12 flex items-center justify-center relative order-2 md:order-1">
-             <div className="absolute inset-0 bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:24px_24px] opacity-5"></div>
-             <div className="w-full h-full min-h-[400px] bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center overflow-hidden relative group">
-               {/* Carousel Images */}
-               {carouselImages.map((img, index) => (
-                 <img 
-                   key={index}
-                   src={img} 
-                   alt={`Theme Example ${index + 1}`}
-                   className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
-                     index === currentImageIndex ? 'opacity-100' : 'opacity-0'
-                   }`}
-                 />
-               ))}
-               
-               {/* Carousel Indicators */}
-               <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-10">
-                 {carouselImages.map((_, index) => (
-                   <div 
-                     key={index}
-                     className={`w-2 h-2 rounded-full transition-all ${
-                       index === currentImageIndex ? 'bg-black w-4' : 'bg-black/30'
-                     }`}
-                   />
-                 ))}
-               </div>
-             </div>
+            <div className="absolute inset-0 bg-[radial-gradient(#000_1px,transparent_1px)] [background-size:24px_24px] opacity-5"></div>
+            <div className="w-full h-full min-h-[400px] bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center overflow-hidden relative group">
+              {/* Carousel Images */}
+              {carouselImages.map((img, index) => (
+                <img
+                  key={index}
+                  src={img}
+                  alt={`Theme Example ${index + 1}`}
+                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${index === currentImageIndex ? 'opacity-100' : 'opacity-0'
+                    }`}
+                />
+              ))}
+
+              {/* Carousel Indicators */}
+              <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-10">
+                {carouselImages.map((_, index) => (
+                  <div
+                    key={index}
+                    className={`w-2 h-2 rounded-full transition-all ${index === currentImageIndex ? 'bg-black w-4' : 'bg-black/30'
+                      }`}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
           <div className="p-12 md:p-24 flex flex-col justify-center bg-[#ffc900] order-1 md:order-2">
-            <h2 className="text-4xl md:text-5xl font-black mb-6">Tamamen Özelleştirilebilir.</h2>
+            <h2 className="text-4xl md:text-5xl font-black mb-6">{t('deep_dive_2.title')}</h2>
             <p className="text-xl font-medium mb-8">
-              Topluluğunuzun kimliğini yansıtın. Koyu moddan özel renk paletlerine kadar her şeyi markanıza göre ayarlayın.
+              {t('deep_dive_2.desc')}
             </p>
             <button className="self-start bg-black text-white px-8 py-4 font-bold border-2 border-black hover:bg-gray-800 transition-all">
-              Temaları İncele
+              {t('deep_dive_2.cta')}
             </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section id="pricing" className="border-b-2 border-black py-24 bg-white">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl md:text-5xl font-black mb-4">{t('pricing.title')}</h2>
+            <p className="text-xl text-gray-600 font-medium mb-8">{t('pricing.subtitle')}</p>
+            
+            {/* Currency Switcher */}
+            <div className="flex items-center justify-center gap-4 mb-8">
+              <span className="text-sm font-bold text-gray-600">Para Birimi:</span>
+              <div className="flex border-2 border-black bg-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                <button
+                  onClick={() => setCurrency('TRY')}
+                  className={`px-6 py-2 font-bold transition-all ${
+                    currency === 'TRY'
+                      ? 'bg-black text-white'
+                      : 'bg-white text-black hover:bg-gray-100'
+                  }`}
+                >
+                  ₺ TL
+                </button>
+                <button
+                  onClick={() => setCurrency('USD')}
+                  className={`px-6 py-2 font-bold border-l-2 border-black transition-all ${
+                    currency === 'USD'
+                      ? 'bg-black text-white'
+                      : 'bg-white text-black hover:bg-gray-100'
+                  }`}
+                >
+                  $ USD
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {/* Pro Plan - Left */}
+            <div className="border-2 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] transition-all bg-white">
+              <div className="bg-[#23a094] text-white inline-block px-4 py-1 border-2 border-black font-bold mb-4 text-sm uppercase tracking-wider">
+                {t('pricing.plans.pro.name')}
+              </div>
+              <div className="flex items-baseline mb-8">
+                <span className="text-5xl font-black">
+                  {currency === 'TRY' ? `₺${PRICING_TRY.pro}` : `$${PRICING_USD.pro}`}
+                </span>
+                <span className="text-gray-600 font-bold ml-2">{t('pricing.monthly')}</span>
+              </div>
+              <ul className="space-y-4 mb-8 font-medium">
+                {t('pricing.plans.pro.features', { returnObjects: true }).map((feature, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" strokeWidth={3} /> 
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <button className="w-full bg-white text-black border-2 border-black py-4 font-bold hover:bg-black hover:text-white transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                {t('pricing.cta')}
+              </button>
+            </div>
+
+            {/* Starter Plan - Center (Featured) */}
+            <div className="border-2 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] transition-all bg-[#ffc900] relative transform scale-105 z-10">
+              <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-black text-white px-6 py-2 font-bold border-2 border-black transform rotate-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+                EN POPÜLER
+              </div>
+              <div className="bg-black text-white inline-block px-4 py-1 border-2 border-black font-bold mb-4 text-sm uppercase tracking-wider">
+                {t('pricing.plans.starter.name')}
+              </div>
+              <div className="flex items-baseline mb-8">
+                <span className="text-5xl font-black">
+                  {currency === 'TRY' ? `₺${PRICING_TRY.starter}` : `$${PRICING_USD.starter}`}
+                </span>
+                <span className="text-gray-600 font-bold ml-2">{t('pricing.monthly')}</span>
+              </div>
+              <ul className="space-y-4 mb-8 font-bold">
+                {t('pricing.plans.starter.features', { returnObjects: true }).map((feature, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <Check className="h-6 w-6 bg-black text-white rounded-full p-0.5 flex-shrink-0 mt-0.5" strokeWidth={3} /> 
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <button className="w-full bg-black text-white border-2 border-black py-4 font-bold hover:bg-white hover:text-black transition-colors shadow-[4px_4px_0px_0px_#fff]">
+                {t('pricing.cta')}
+              </button>
+            </div>
+
+            {/* Enterprise Plan - Right */}
+            <div className="border-2 border-black p-8 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-4px] hover:translate-y-[-4px] hover:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] transition-all bg-white">
+              <div className="bg-[#ff90e8] inline-block px-4 py-1 border-2 border-black font-bold mb-4 text-sm uppercase tracking-wider">
+                {t('pricing.plans.enterprise.name')}
+              </div>
+              <div className="flex items-baseline mb-8">
+                <span className="text-5xl font-black">
+                  {currency === 'TRY' ? PRICING_TRY.enterprise : PRICING_USD.enterprise}
+                </span>
+              </div>
+              <ul className="space-y-4 mb-8 font-medium">
+                {t('pricing.plans.enterprise.features', { returnObjects: true }).map((feature, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" strokeWidth={3} /> 
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <button className="w-full bg-white text-black border-2 border-black py-4 font-bold hover:bg-black hover:text-white transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+                Contact Sales
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -319,23 +451,23 @@ function HomePage() {
       {/* Stats Section */}
       <section className="border-b-2 border-black py-24 bg-black text-white">
         <div className="container mx-auto px-6 text-center">
-          <h2 className="text-4xl font-black mb-16">RAKAMLARLA VIBEHOST</h2>
+          <h2 className="text-4xl font-black mb-16">{t('stats.title')}</h2>
           <div className="grid md:grid-cols-4 gap-12">
             <div>
               <div className="text-6xl font-black text-[#ffc900] mb-2">10K+</div>
-              <div className="font-bold text-xl">Aktif Üye</div>
+              <div className="font-bold text-xl">{t('stats.members')}</div>
             </div>
             <div>
               <div className="text-6xl font-black text-[#ff90e8] mb-2">99.9%</div>
-              <div className="font-bold text-xl">Uptime</div>
+              <div className="font-bold text-xl">{t('stats.uptime')}</div>
             </div>
             <div>
               <div className="text-6xl font-black text-[#23a094] mb-2">50+</div>
-              <div className="font-bold text-xl">Ülke</div>
+              <div className="font-bold text-xl">{t('stats.countries')}</div>
             </div>
             <div>
               <div className="text-6xl font-black text-[#f1f333] mb-2">24/7</div>
-              <div className="font-bold text-xl">Destek</div>
+              <div className="font-bold text-xl">{t('stats.support')}</div>
             </div>
           </div>
         </div>
@@ -345,23 +477,23 @@ function HomePage() {
       <section className="py-32 bg-white">
         <div className="container mx-auto px-6 max-w-4xl text-center">
           <h2 className="text-5xl md:text-6xl font-black mb-8 leading-tight">
-            Fikrini Hayata Geçirmeye <br/> Hazır Mısın?
+            {t('cta_section.title')}
           </h2>
           <p className="text-xl font-medium text-gray-600 mb-12 max-w-2xl mx-auto">
-            Deneme süresi yok, kredi kartı gerekmiyor. Sadece başla ve topluluğunu oluştur. İlk 14 gün bizden.
+            {t('cta_section.desc')}
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             {user ? (
-              <a href="/dashboard" 
+              <a href="/dashboard"
                 className="bg-[#ffc900] text-black px-12 py-6 text-xl font-black border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] transition-all block text-center"
               >
-                Panele Git
+                {t('cta_section.button_dashboard')}
               </a>
             ) : (
-              <a href="/register" 
+              <a href="/register"
                 className="bg-[#ffc900] text-black px-12 py-6 text-xl font-black border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] transition-all block text-center"
               >
-                Ücretsiz Başla
+                {t('cta_section.button')}
               </a>
             )}
           </div>
@@ -373,44 +505,44 @@ function HomePage() {
         <div className="container mx-auto px-6">
           <div className="grid md:grid-cols-4 gap-12 mb-12">
             <div className="col-span-2">
-              <h3 className="text-2xl font-bold mb-4">VibeHost</h3>
+              <h3 className="text-2xl font-bold mb-4">HostingPoint</h3>
               <p className="text-gray-400 max-w-sm">
-                Modern topluluklar için en kolay Discourse hosting çözümü. Altyapıyı bize bırakın, siz içeriğe odaklanın.
+                {t('footer.desc')}
               </p>
             </div>
             <div>
-              <h4 className="font-bold mb-4 text-gray-500">ÜRÜN</h4>
+              <h4 className="font-bold mb-4 text-gray-500">{t('footer.product')}</h4>
               <ul className="space-y-2 font-medium">
-                <li><a href="#" className="hover:text-[#ffc900]">Özellikler</a></li>
-                <li><a href="#" className="hover:text-[#ffc900]">Fiyatlandırma</a></li>
-                <li><a href="#" className="hover:text-[#ffc900]">Showcase</a></li>
-                <li><a href="#" className="hover:text-[#ffc900]">Changelog</a></li>
+                <li><a href="#" className="hover:text-[#ffc900]">{t('footer.links.features')}</a></li>
+                <li><a href="#" className="hover:text-[#ffc900]">{t('footer.links.pricing')}</a></li>
+                <li><a href="#" className="hover:text-[#ffc900]">{t('footer.links.showcase')}</a></li>
+                <li><a href="#" className="hover:text-[#ffc900]">{t('footer.links.changelog')}</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-bold mb-4 text-gray-500">ŞİRKET</h4>
+              <h4 className="font-bold mb-4 text-gray-500">{t('footer.company')}</h4>
               <ul className="space-y-2 font-medium">
-                <li><a href="#" className="hover:text-[#ffc900]">Hakkımızda</a></li>
-                <li><a href="#" className="hover:text-[#ffc900]">Kariyer</a></li>
-                <li><a href="#" className="hover:text-[#ffc900]">Blog</a></li>
-                <li><a href="#" className="hover:text-[#ffc900]">İletişim</a></li>
+                <li><a href="#" className="hover:text-[#ffc900]">{t('footer.links.about')}</a></li>
+                <li><a href="#" className="hover:text-[#ffc900]">{t('footer.links.careers')}</a></li>
+                <li><a href="#" className="hover:text-[#ffc900]">{t('footer.links.blog')}</a></li>
+                <li><a href="#" className="hover:text-[#ffc900]">{t('footer.links.contact')}</a></li>
               </ul>
             </div>
           </div>
           <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="font-medium text-gray-500">
-              © 2024 VibeHost Inc. Tüm hakları saklıdır.
+              {t('footer.rights')}
             </div>
             <div className="flex gap-6 font-medium">
-              <a href="#" className="hover:text-white">Gizlilik</a>
-              <a href="#" className="hover:text-white">Şartlar</a>
+              <a href="#" className="hover:text-white">{t('footer.links.privacy')}</a>
+              <a href="#" className="hover:text-white">{t('footer.links.terms')}</a>
             </div>
           </div>
         </div>
       </footer>
 
-      <DeployModal 
-        isOpen={isModalOpen} 
+      <DeployModal
+        isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       />
     </div>

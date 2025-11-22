@@ -1,0 +1,121 @@
+{
+    "nav": {
+        "features": "Features",
+        "showcase": "Showcase",
+        "pricing": "Pricing",
+        "login": "Login",
+        "dashboard": "Dashboard",
+        "start": "Get Started"
+    },
+    "hero": {
+        "badge": "🚀 HostingPoint v2.0 Is Live",
+        "title_part1": "Build Your Community",
+        "title_part2": "Freely",
+        "subtitle": "No technical skills needed. Deploy, manage, and grow your own Discourse forum in seconds.",
+        "cta_primary": "Get Started Free",
+        "cta_secondary": "View Demo",
+        "cta_dashboard": "Go to Dashboard"
+    },
+    "social_proof": {
+        "label": "TRUSTED BY THE BEST"
+    },
+    "features": {
+        "modern": {
+            "title": "Modern Discussions",
+            "desc": "Unlike old forums, Discourse offers a modern, dynamic, and fluid discussion experience. Stay in the flow with infinite scrolling instead of getting lost in pages."
+        },
+        "security": {
+            "title": "Security & Moderation",
+            "desc": "Keep your community safe with automatic spam protection, trust system, and comprehensive moderation tools."
+        },
+        "mobile": {
+            "title": "Mobile Friendly",
+            "desc": "Responsive design that looks perfect on every device. Your members can join discussions even when on the go."
+        }
+    },
+    "deep_dive_1": {
+        "title": "You Are In Control.",
+        "desc": "Customize every detail of your community with a powerful admin panel.",
+        "list": {
+            "themes": "Customizable Themes",
+            "categories": "Advanced Category Management",
+            "plugins": "Official Plugin Support"
+        }
+    },
+    "deep_dive_2": {
+        "title": "Fully Customizable.",
+        "desc": "Reflect your community's identity. Adjust everything from dark mode to custom color palettes to match your brand.",
+        "cta": "Explore Themes"
+    },
+    "stats": {
+        "title": "HOSTINGPOINT IN NUMBERS",
+        "members": "Active Members",
+        "uptime": "Uptime",
+        "countries": "Countries",
+        "support": "Support"
+    },
+    "pricing": {
+        "title": "Simple, Transparent Pricing",
+        "subtitle": "Choose the plan that fits your community needs.",
+        "monthly": "/month",
+        "plans": {
+            "starter": {
+                "name": "Starter",
+                "price": "$29",
+                "features": [
+                    "1 Forum",
+                    "10GB Storage",
+                    "Unlimited Members",
+                    "Standard Support"
+                ]
+            },
+            "pro": {
+                "name": "Pro",
+                "price": "$79",
+                "features": [
+                    "3 Forums",
+                    "50GB Storage",
+                    "Priority Support",
+                    "Custom Domain",
+                    "Daily Backups"
+                ]
+            },
+            "enterprise": {
+                "name": "Enterprise",
+                "price": "Custom",
+                "features": [
+                    "Unlimited Forums",
+                    "Unlimited Storage",
+                    "24/7 Dedicated Support",
+                    "SLA",
+                    "Custom Integrations"
+                ]
+            }
+        },
+        "cta": "Choose Plan"
+    },
+    "cta_section": {
+        "title": "Ready to Bring Your Idea to Life?",
+        "desc": "No trial period, no credit card required. Just start and build your community. First 14 days are on us.",
+        "button": "Start for Free",
+        "button_dashboard": "Go to Dashboard"
+    },
+    "footer": {
+        "desc": "The easiest Discourse hosting solution for modern communities. Leave the infrastructure to us, focus on your content.",
+        "product": "PRODUCT",
+        "company": "COMPANY",
+        "rights": "© 2024 HostingPoint Inc. All rights reserved.",
+        "links": {
+            "features": "Features",
+            "pricing": "Pricing",
+            "showcase": "Showcase",
+            "changelog": "Changelog",
+            "about": "About Us",
+            "careers": "Careers",
+            "blog": "Blog",
+            "contact": "Contact",
+            "privacy": "Privacy",
+            "terms": "Terms"
+        }
+    }
+}

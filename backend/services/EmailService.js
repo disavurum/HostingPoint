@@ -35,7 +35,7 @@ class EmailService {
   }
 
   async sendEmail(to, subject, html, text = null) {
-    const smtpFrom = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@vibehost.io';
+    const smtpFrom = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@hostingpoint.net';
 
     const mailOptions = {
       from: smtpFrom,
@@ -83,7 +83,7 @@ class EmailService {
       <body>
         <div class="container">
           <div class="header">
-            <h1>VibeHost</h1>
+            <h1>HostingPoint</h1>
           </div>
           <div class="content">
             <h2>Forumunuz Hazır! 🎉</h2>
@@ -95,10 +95,10 @@ class EmailService {
             </p>
             <p><strong>Forum URL:</strong> <a href="${forumUrl}">${forumUrl}</a></p>
             <p>İyi forumlar!</p>
-            <p>VibeHost Ekibi</p>
+            <p>HostingPoint Ekibi</p>
           </div>
           <div class="footer">
-            <p>Bu email VibeHost tarafından otomatik olarak gönderilmiştir.</p>
+            <p>Bu email HostingPoint tarafından otomatik olarak gönderilmiştir.</p>
           </div>
         </div>
       </body>
@@ -127,7 +127,7 @@ class EmailService {
       <body>
         <div class="container">
           <div class="header">
-            <h1>VibeHost</h1>
+            <h1>HostingPoint</h1>
           </div>
           <div class="content">
             <h2>Forum Kurulumu Başarısız</h2>
@@ -137,10 +137,10 @@ class EmailService {
               <strong>Hata:</strong> ${error}
             </div>
             <p>Lütfen tekrar deneyin veya destek ekibimizle iletişime geçin.</p>
-            <p>VibeHost Ekibi</p>
+            <p>HostingPoint Ekibi</p>
           </div>
           <div class="footer">
-            <p>Bu email VibeHost tarafından otomatik olarak gönderilmiştir.</p>
+            <p>Bu email HostingPoint tarafından otomatik olarak gönderilmiştir.</p>
           </div>
         </div>
       </body>
