@@ -6,7 +6,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: vibehost-backend
+    container_name: hostingpoint-backend
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -31,7 +31,7 @@ services:
       dockerfile: Dockerfile
       args:
         - VITE_DOMAIN=${DOMAIN}
-    container_name: vibehost-frontend
+    container_name: hostingpoint-frontend
     restart: unless-stopped
     # Coolify otomatik olarak port mapping ve domain yönetimi yapar
     # labels eklemenize gerek yok
