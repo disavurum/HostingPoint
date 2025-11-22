@@ -9,9 +9,21 @@
 2. "Services" veya "Applications" bölümüne gidin
 3. Backend service'inizi seçin (ör: `hostingpoint-backend`)
 
-#### Adım 2: Volumes Sekmesine Gidin
+#### Adım 2: Docker Compose Sekmesine Gidin
+
+Coolify'da volume'lar genellikle **Docker Compose** üzerinden yapılandırılır:
+
+**Yöntem 1: Docker Compose Sekmesi (Önerilen)**
+1. Service detay sayfasında **"Docker Compose"** veya **"Configuration"** sekmesini bulun
+2. Docker Compose dosyasını düzenleyin
+
+**Yöntem 2: Volumes Sekmesi (Eğer varsa)**
 1. Service detay sayfasında **"Volumes"** veya **"Storage"** sekmesini bulun
 2. "Add Volume" veya "+" butonuna tıklayın
+
+**Yöntem 3: Advanced Settings**
+1. Service detay sayfasında **"Advanced"** veya **"Settings"** sekmesine gidin
+2. Volume ayarlarını burada bulabilirsiniz
 
 #### Adım 3: Docker Socket Mount (EN ÖNEMLİSİ!)
 
@@ -110,24 +122,55 @@ sudo chmod -R 755 /data/coolify/volumes/hostingpoint/
 | Named Volume | `hostingpoint-backend-data` | `/app/data` | ❌ No | Database |
 | Bind Mount | `/data/coolify/volumes/hostingpoint/customers` | `/app/customers` | ❌ No | Forum data |
 
-### 6. Coolify UI'da Görsel Rehber
+### 6. Coolify UI'da Volume Ekleme (Docker Compose ile)
 
-1. **Service → Volumes Tab:**
-   ```
-   [Service Name] → [Volumes] → [+ Add Volume]
-   ```
+Eğer "Volumes" sekmesi yoksa, Docker Compose dosyasını kullanın:
 
-2. **Volume Form:**
-   ```
-   Type: [Dropdown: Bind Mount / Named Volume]
-   Host Path: [Text Input]
-   Container Path: [Text Input]
-   Read Only: [Checkbox]
-   ```
+#### Adım 1: Service'i Açın
+1. Coolify Dashboard → Service'inizi seçin (Backend)
 
-3. **Kaydet:**
-   - "Save" butonuna tıklayın
-   - Service otomatik olarak redeploy edilecek (veya manuel redeploy gerekebilir)
+#### Adım 2: Docker Compose Sekmesine Gidin
+1. **"Docker Compose"** veya **"Configuration"** sekmesini bulun
+2. Docker Compose içeriğini düzenleyin
+
+#### Adım 3: Volume'ları Ekleyin
+
+Backend service için Docker Compose'a şunu ekleyin:
+
+```yaml
+services:
+  backend:
+    # ... diğer ayarlar ...
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro  # Docker socket (READ-ONLY!)
+      - backend-data:/app/data                        # Database
+      - ./customers:/app/customers                    # Forum data (host path)
+
+volumes:
+  backend-data:  # Named volume
+```
+
+**ÖNEMLİ:** `/var/run/docker.sock` mutlaka `:ro` (read-only) ile mount edilmeli!
+
+#### Adım 4: Kaydet ve Redeploy
+1. "Save" veya "Update" butonuna tıklayın
+2. Service'i redeploy edin
+
+### 7. Alternatif: Coolify'ın Otomatik Volume Yönetimi
+
+Coolify bazı durumlarda volume'ları otomatik yönetir. Eğer Docker Compose sekmesi de yoksa:
+
+1. **Service Settings → Advanced** bölümüne gidin
+2. **"Docker Socket"** veya **"Privileged Mode"** seçeneğini arayın
+3. Docker socket erişimi için gerekli izinleri verin
+
+### 8. Manuel Docker Compose Dosyası Kullanımı
+
+Eğer Coolify UI'da volume ekleyemiyorsanız, `docker-compose.coolify.yml` dosyasını kullanın:
+
+1. Repository'nize `docker-compose.coolify.yml` dosyasını ekleyin (zaten var)
+2. Coolify'da service oluştururken bu dosyayı seçin
+3. Volume'lar otomatik olarak yüklenecek
 
 ### 7. Önemli Notlar
 
