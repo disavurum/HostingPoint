@@ -20,7 +20,14 @@ const execAsync = (command, options = {}) => {
     });
   });
 };
-const docker = new Docker({ socketPath: '/var/run/docker.sock' });
+// Initialize Docker client with error handling
+let docker;
+try {
+  docker = new Docker({ socketPath: '/var/run/docker.sock' });
+} catch (error) {
+  console.error('Failed to initialize Docker client:', error);
+  docker = null;
+}
 
 const CUSTOMERS_DIR = path.join(__dirname, '../customers');
 const POSTGRES_PASSWORD = process.env.POSTGRES_PASSWORD || 'changeme';
@@ -34,6 +41,16 @@ class DeployService {
    * Deploy a new Discourse forum
    */
   static async deployForum(forumName, email, domain, customDomain = null) {
+    // Check Docker socket access
+    try {
+      if (!docker) {
+        throw new Error('Docker client not initialized. Docker socket may not be accessible.');
+      }
+      await docker.ping();
+    } catch (error) {
+      throw new Error(`Docker erişim hatası: ${error.message}. Docker socket mount edilmiş mi kontrol edin: /var/run/docker.sock`);
+    }
+
     const customerDir = path.join(CUSTOMERS_DIR, forumName);
 
     // Check if forum already exists

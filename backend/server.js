@@ -110,13 +110,15 @@ function generateRandomSubdomain() {
 }
 
 // Deploy forum endpoint (rate limiting temporarily disabled)
-app.post('/api/deploy', authenticate, async (req, res, next) => {
+app.post('/api/deploy', authenticate, async (req, res) => {
+  let finalForumName = null;
+  let finalDomain = DOMAIN;
+  let customDomainValue = null;
+  
   try {
     const { forumName, customDomain, autoGenerate } = req.body;
 
-    let finalForumName = forumName;
-    let finalDomain = DOMAIN;
-    let customDomainValue = null;
+    finalForumName = forumName;
 
     // Handle custom domain
     if (customDomain) {
@@ -260,12 +262,14 @@ app.post('/api/deploy', authenticate, async (req, res, next) => {
       error: error.message,
       stack: error.stack,
       forumName: req.body.forumName,
-      userId: req.userId
+      userId: req.userId,
+      body: req.body
     });
 
     // Update forum status to failed
-    if (req.body.forumName) {
-      Forum.updateStatus(req.body.forumName, 'failed').catch(err => {
+    if (req.body.forumName || finalForumName) {
+      const forumNameToUpdate = finalForumName || req.body.forumName;
+      Forum.updateStatus(forumNameToUpdate, 'failed').catch(err => {
         logger.error('Failed to update forum status:', err);
       });
 
@@ -274,7 +278,7 @@ app.post('/api/deploy', authenticate, async (req, res, next) => {
       if (userEmail) {
         EmailService.sendDeploymentFailedEmail(
           userEmail,
-          req.body.forumName,
+          forumNameToUpdate,
           error.message
         ).catch(err => {
           logger.error('Failed to send failure email:', err);
@@ -282,7 +286,18 @@ app.post('/api/deploy', authenticate, async (req, res, next) => {
       }
     }
 
-    next(error);
+    // Return detailed error response
+    const errorMessage = error.message || 'Internal server error';
+    const isDockerError = errorMessage.includes('docker') || errorMessage.includes('Docker') || (errorMessage.includes('ENOENT') && errorMessage.includes('docker.sock'));
+    
+    res.status(500).json({
+      error: 'Deployment failed',
+      message: isDockerError 
+        ? 'Docker erişim hatası. Docker socket mount edilmiş mi kontrol edin: /var/run/docker.sock'
+        : errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      forumName: finalForumName || req.body?.forumName || 'unknown'
+    });
   }
 });
 
