@@ -380,13 +380,13 @@ const Dashboard = () => {
                 </h2>
                 {forums.filter(f => f.status === 'active').length > 0 ? (
                   <div className="space-y-4">
-                    {forums.filter(f => f.status === 'active').map(forum => {
+                    {forums.filter(f => f.status === 'active').map((forum, index) => {
                       const stats = forumStats[forum.name];
                       const totalCpu = stats?.containers?.reduce((acc, c) => acc + (c.cpu || 0), 0) || 0;
                       const totalMem = stats?.containers?.reduce((acc, c) => acc + (c.memory?.percent || 0), 0) || 0;
 
                       return (
-                        <div key={forum.id} className="border border-gray-200 p-3 rounded">
+                        <div key={forum.id || forum.name || `forum-${index}`} className="border border-gray-200 p-3 rounded">
                           <div className="font-bold mb-2">{forum.name}</div>
                           <div className="grid grid-cols-2 gap-4">
                             <div>
@@ -477,13 +477,13 @@ const Dashboard = () => {
               )
             ) : (
               <div className="grid gap-6">
-                {forums.slice(0, activeTab === 'overview' ? 3 : undefined).map((forum) => {
+                {forums.slice(0, activeTab === 'overview' ? 3 : undefined).map((forum, index) => {
                   const stats = forumStats[forum.name];
                   const isRunning = forum.running || stats?.running;
                   const containerCount = forum.containers?.length || stats?.containers?.length || 0;
                   
                   return (
-                    <div key={forum.id} className="bg-white border-2 border-black p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all">
+                    <div key={forum.id || forum.name || `forum-${index}`} className="bg-white border-2 border-black p-6 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all">
                       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
                         <div className="flex items-center gap-4 flex-1">
                           <div className="w-16 h-16 bg-[#ffc900] border-2 border-black flex items-center justify-center font-black text-2xl">
