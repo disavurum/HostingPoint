@@ -24,14 +24,16 @@ Backend service'inize şu environment variable'ları ekleyin:
 ```env
 USE_COOLIFY=true
 COOLIFY_URL=http://coolify:8000
-COOLIFY_API_KEY=your-api-key-here
+COOLIFY_API_KEY=VzUwe69V6tiwLebLYIPE7U4jkLRIST0K8bppa1EV1f260694
 COOLIFY_SERVER_ID=1
 ```
 
+**Detaylı rehber:** `COOLIFY_ENV_SETUP.md`
+
 - [ ] `USE_COOLIFY=true` ekleyin
-- [ ] `COOLIFY_URL` ayarlayın
-- [ ] `COOLIFY_API_KEY` ekleyin
-- [ ] `COOLIFY_SERVER_ID` ekleyin
+- [ ] `COOLIFY_URL` ayarlayın (genellikle `http://coolify:8000`)
+- [ ] `COOLIFY_API_KEY` ekleyin (token'ı secret olarak işaretleyin)
+- [ ] `COOLIFY_SERVER_ID=1` ekleyin
 
 ### 5. Dependencies
 - [ ] Backend'de `npm install axios` çalıştırın (zaten yapıldı)
