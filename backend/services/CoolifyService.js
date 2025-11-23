@@ -88,10 +88,39 @@ class CoolifyService {
   }
 
   /**
+   * Test Coolify connection
+   */
+  async testConnection() {
+    try {
+      const client = this.getApiClient();
+      // Try to access a simple endpoint to test connection
+      const response = await client.get('/servers');
+      logger.info('Coolify connection test successful', { url: this.baseUrl });
+      return true;
+    } catch (error) {
+      logger.error('Coolify connection test failed', {
+        url: this.baseUrl,
+        error: error.message,
+        code: error.code,
+        suggestion: error.code === 'ECONNREFUSED' 
+          ? 'Coolify container name kontrol edin. Önerilen: http://coolify:8000 veya container name'
+          : 'COOLIFY_URL ve COOLIFY_API_KEY kontrol edin'
+      });
+      return false;
+    }
+  }
+
+  /**
    * Create a new project in Coolify
    */
   async createProject(projectName) {
     try {
+      // Test connection first
+      const isConnected = await this.testConnection();
+      if (!isConnected) {
+        throw new Error(`Coolify'a bağlanılamıyor. COOLIFY_URL kontrol edin: ${this.baseUrl}`);
+      }
+
       const client = this.getApiClient();
       
       const response = await client.post('/projects', {
@@ -109,8 +138,16 @@ class CoolifyService {
         url: this.baseUrl
       });
       
-      if (error.code === 'ECONNREFUSED') {
-        throw new Error(`Coolify'a bağlanılamıyor. COOLIFY_URL kontrol edin: ${this.baseUrl}. Önerilen: http://localhost:8000 veya http://coolify:8000`);
+      if (error.code === 'ECONNREFUSED' || error.message.includes('bağlanılamıyor')) {
+        const suggestions = [
+          `COOLIFY_URL kontrol edin: ${this.baseUrl}`,
+          'Coolify container name\'i bulun: docker ps | grep coolify',
+          'Önerilen değerler:',
+          '  - http://coolify:8000 (aynı network\'te)',
+          '  - http://localhost:8000 (aynı sunucuda)',
+          '  - Container name (docker network içinde)'
+        ];
+        throw new Error(`Coolify'a bağlanılamıyor.\n${suggestions.join('\n')}`);
       }
       
       throw new Error(`Coolify proje oluşturulamadı: ${error.response?.data?.message || error.message}`);
