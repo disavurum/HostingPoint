@@ -4,13 +4,29 @@ const { v4: uuidv4 } = require('uuid');
 
 class CoolifyService {
   constructor() {
-    this.baseUrl = process.env.COOLIFY_URL || 'http://localhost:8000';
+    // Normalize URL - remove IPv6 brackets if present and use IPv4 or hostname
+    let baseUrl = process.env.COOLIFY_URL || 'http://localhost:8000';
+    
+    // If URL contains IPv6 address, try to convert or use hostname
+    if (baseUrl.includes('[') || baseUrl.match(/[0-9a-f:]+::/i)) {
+      logger.warn('IPv6 address detected in COOLIFY_URL. Trying to resolve...');
+      // Try to use hostname instead
+      baseUrl = baseUrl.replace(/\[.*?\]/, 'localhost').replace(/[0-9a-f:]+::[0-9a-f:]+/i, 'localhost');
+    }
+    
+    this.baseUrl = baseUrl;
     this.apiKey = process.env.COOLIFY_API_KEY;
     this.serverId = process.env.COOLIFY_SERVER_ID || 1;
     
     if (!this.apiKey) {
       logger.warn('COOLIFY_API_KEY not set. Coolify integration will not work.');
     }
+    
+    logger.info('CoolifyService initialized:', {
+      baseUrl: this.baseUrl,
+      serverId: this.serverId,
+      hasApiKey: !!this.apiKey
+    });
   }
 
   /**
@@ -21,15 +37,54 @@ class CoolifyService {
       throw new Error('Coolify API key not configured');
     }
 
-    return axios.create({
+    const client = axios.create({
       baseURL: `${this.baseUrl}/api/v1`,
       headers: {
         'Authorization': `Bearer ${this.apiKey}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       },
-      timeout: 60000 // 60 seconds for deployment operations
+      timeout: 60000, // 60 seconds for deployment operations
+      // Force IPv4 if IPv6 issues occur
+      family: 4, // Use IPv4 only
+      // Additional connection options
+      validateStatus: function (status) {
+        return status < 500; // Don't throw on 4xx errors
+      }
     });
+
+    // Add request interceptor for better error logging
+    client.interceptors.request.use(
+      (config) => {
+        logger.debug('Coolify API request:', {
+          method: config.method,
+          url: config.url,
+          baseURL: config.baseURL
+        });
+        return config;
+      },
+      (error) => {
+        logger.error('Coolify API request error:', error);
+        return Promise.reject(error);
+      }
+    );
+
+    // Add response interceptor for better error logging
+    client.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.code === 'ECONNREFUSED') {
+          logger.error('Coolify connection refused. Check COOLIFY_URL:', {
+            url: this.baseUrl,
+            error: error.message,
+            suggestion: 'Try using http://localhost:8000 or http://coolify:8000'
+          });
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    return client;
   }
 
   /**
@@ -49,8 +104,15 @@ class CoolifyService {
     } catch (error) {
       logger.error('Failed to create Coolify project:', {
         projectName,
-        error: error.response?.data || error.message
+        error: error.response?.data || error.message,
+        code: error.code,
+        url: this.baseUrl
       });
+      
+      if (error.code === 'ECONNREFUSED') {
+        throw new Error(`Coolify'a bağlanılamıyor. COOLIFY_URL kontrol edin: ${this.baseUrl}. Önerilen: http://localhost:8000 veya http://coolify:8000`);
+      }
+      
       throw new Error(`Coolify proje oluşturulamadı: ${error.response?.data?.message || error.message}`);
     }
   }

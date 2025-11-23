@@ -37,12 +37,15 @@ COOLIFY_SERVER_ID=1
 
 #### 2. COOLIFY_URL
 - **Key:** `COOLIFY_URL`
-- **Value:** `http://coolify:8000` (veya Coolify'ınızın URL'i)
+- **Value:** Aşağıdaki seçeneklerden birini kullanın:
+  - `http://coolify:8000` (Aynı Docker network'te - **ÖNERİLEN**)
+  - `http://localhost:8000` (Aynı sunucuda, farklı network)
+  - `https://coolify.yourdomain.com` (Farklı sunucuda, HTTPS)
 - **Type:** Environment Variable
 
-**Not:** Eğer Coolify farklı bir sunucudaysa:
-- `https://coolify.yourdomain.com` (HTTPS)
-- `http://coolify-container-name:8000` (Docker network içinde)
+**⚠️ ÖNEMLİ:** IPv6 adresi kullanmayın! IPv4 veya hostname kullanın.
+
+**Sorun giderme:** `COOLIFY_URL_TROUBLESHOOTING.md` dosyasına bakın.
 
 #### 3. COOLIFY_API_KEY
 - **Key:** `COOLIFY_API_KEY`
