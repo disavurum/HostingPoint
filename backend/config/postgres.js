@@ -47,15 +47,24 @@ const get = async (text, params) => {
 // Get all rows
 const getAll = async (text, params) => {
   const result = await query(text, params);
-  return result.rows;
+  return result.rows || result;
 };
 
 // Run (INSERT, UPDATE, DELETE) - returns last inserted ID for INSERT
 const run = async (text, params) => {
-  const result = await query(text, params);
+  // For INSERT, append RETURNING id to get the inserted ID
+  let sql = text;
+  if (text.trim().toUpperCase().startsWith('INSERT')) {
+    // Check if RETURNING clause already exists
+    if (!text.toUpperCase().includes('RETURNING')) {
+      sql = text + ' RETURNING id';
+    }
+  }
+  
+  const result = await query(sql, params);
   return {
-    id: result.rows[0]?.id || null,
-    changes: result.rowCount
+    id: result[0]?.id || result.rows?.[0]?.id || null,
+    changes: result.length || result.rowCount || 0
   };
 };
 
