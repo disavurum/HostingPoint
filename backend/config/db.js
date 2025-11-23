@@ -76,8 +76,7 @@ async function testPostgresConnection() {
   }
 }
 
-// Export test function
-module.exports.testPostgresConnection = testPostgresConnection;
+// testPostgresConnection will be exported in module.exports below
 
 // Query function - supports both SQLite and PostgreSQL
 const query = async (sql, params = []) => {
