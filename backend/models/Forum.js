@@ -6,45 +6,98 @@ class Forum {
   }
 
   async createTable() {
-    // Check existing columns and add missing ones
-    try {
-      const tableInfo = await db.query("PRAGMA table_info(forums)");
-      const columns = tableInfo.map(col => col.name);
-      
-      if (!columns.includes('custom_domain')) {
-        await db.run("ALTER TABLE forums ADD COLUMN custom_domain TEXT");
-      }
-      if (!columns.includes('coolify_project_id')) {
-        await db.run("ALTER TABLE forums ADD COLUMN coolify_project_id TEXT");
-      }
-      if (!columns.includes('coolify_application_id')) {
-        await db.run("ALTER TABLE forums ADD COLUMN coolify_application_id TEXT");
-      }
-    } catch (err) {
-      // Table might not exist yet, that's okay
-    }
+    const USE_POSTGRES = process.env.USE_POSTGRES === 'true' || process.env.USE_POSTGRES === '1';
     
-    const query = `
-      CREATE TABLE IF NOT EXISTS forums (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT UNIQUE NOT NULL,
-        user_id INTEGER NOT NULL,
-        email TEXT NOT NULL,
-        domain TEXT NOT NULL,
-        custom_domain TEXT,
-        coolify_project_id TEXT,
-        coolify_application_id TEXT,
-        status TEXT DEFAULT 'deploying',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-      );
-      CREATE INDEX IF NOT EXISTS idx_forums_user_id ON forums(user_id);
-    `;
-    try {
-      await db.query(query);
-    } catch (err) {
-      throw err;
+    if (USE_POSTGRES) {
+      // PostgreSQL table creation
+      const query = `
+        CREATE TABLE IF NOT EXISTS forums (
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(255) UNIQUE NOT NULL,
+          user_id INTEGER NOT NULL,
+          email VARCHAR(255) NOT NULL,
+          domain VARCHAR(255) NOT NULL,
+          custom_domain VARCHAR(255),
+          coolify_project_id VARCHAR(255),
+          coolify_application_id VARCHAR(255),
+          status VARCHAR(50) DEFAULT 'deploying',
+          created_at TIMESTAMP DEFAULT NOW(),
+          updated_at TIMESTAMP DEFAULT NOW(),
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+        
+        CREATE INDEX IF NOT EXISTS idx_forums_user_id ON forums(user_id);
+        CREATE INDEX IF NOT EXISTS idx_forums_name ON forums(name);
+      `;
+      
+      try {
+        await db.run(query);
+        
+        // Check and add missing columns
+        try {
+          const columns = await db.query(`
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name = 'forums'
+          `);
+          const columnNames = columns.map(col => col.column_name);
+          
+          if (!columnNames.includes('custom_domain')) {
+            await db.run("ALTER TABLE forums ADD COLUMN custom_domain VARCHAR(255)");
+          }
+          if (!columnNames.includes('coolify_project_id')) {
+            await db.run("ALTER TABLE forums ADD COLUMN coolify_project_id VARCHAR(255)");
+          }
+          if (!columnNames.includes('coolify_application_id')) {
+            await db.run("ALTER TABLE forums ADD COLUMN coolify_application_id VARCHAR(255)");
+          }
+        } catch (err) {
+          // Columns might already exist
+        }
+      } catch (err) {
+        throw err;
+      }
+    } else {
+      // SQLite table creation (original code)
+      try {
+        const tableInfo = await db.query("PRAGMA table_info(forums)");
+        const columns = tableInfo.map(col => col.name);
+        
+        if (!columns.includes('custom_domain')) {
+          await db.run("ALTER TABLE forums ADD COLUMN custom_domain TEXT");
+        }
+        if (!columns.includes('coolify_project_id')) {
+          await db.run("ALTER TABLE forums ADD COLUMN coolify_project_id TEXT");
+        }
+        if (!columns.includes('coolify_application_id')) {
+          await db.run("ALTER TABLE forums ADD COLUMN coolify_application_id TEXT");
+        }
+      } catch (err) {
+        // Table might not exist yet, that's okay
+      }
+      
+      const query = `
+        CREATE TABLE IF NOT EXISTS forums (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT UNIQUE NOT NULL,
+          user_id INTEGER NOT NULL,
+          email TEXT NOT NULL,
+          domain TEXT NOT NULL,
+          custom_domain TEXT,
+          coolify_project_id TEXT,
+          coolify_application_id TEXT,
+          status TEXT DEFAULT 'deploying',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_forums_user_id ON forums(user_id);
+      `;
+      try {
+        await db.query(query);
+      } catch (err) {
+        throw err;
+      }
     }
   }
 

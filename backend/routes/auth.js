@@ -37,17 +37,20 @@ router.post('/register', authLimiter, async (req, res, next) => {
       });
     }
 
+    // Normalize email (lowercase)
+    const normalizedEmail = email.toLowerCase().trim();
+
     // Check if user already exists
-    const existingUser = await User.findByEmail(email);
+    const existingUser = await User.findByEmail(normalizedEmail);
     if (existingUser) {
       return res.status(409).json({
         error: 'User already exists',
-        message: 'An account with this email already exists'
+        message: 'Bu email adresi ile zaten bir hesap mevcut. Lütfen giriş yapın.'
       });
     }
 
     // Create user
-    const user = await User.create(email, password, name);
+    const user = await User.create(normalizedEmail, password, name);
 
     logger.info('User registered:', { userId: user.id, email: user.email });
 
@@ -86,10 +89,13 @@ router.post('/login', authLimiter, async (req, res, next) => {
       });
     }
 
+    // Normalize email (lowercase)
+    const normalizedEmail = email.toLowerCase().trim();
+
     // Find user
-    const user = await User.findByEmail(email);
+    const user = await User.findByEmail(normalizedEmail);
     if (!user) {
-      logger.warn(`Login failed: User not found for email ${email}`);
+      logger.warn(`Login failed: User not found for email ${normalizedEmail}`);
       return res.status(401).json({
         error: 'Invalid credentials',
         message: 'Email or password is incorrect'

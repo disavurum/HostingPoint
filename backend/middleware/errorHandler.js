@@ -25,9 +25,14 @@ const errorHandler = (err, req, res, next) => {
   } else if (err.name === 'UnauthorizedError' || err.name === 'JsonWebTokenError') {
     statusCode = 401;
     message = 'Authentication failed';
-  } else if (err.code === 'SQLITE_CONSTRAINT') {
+  } else if (err.code === 'SQLITE_CONSTRAINT' || err.code === '23505') {
+    // SQLITE_CONSTRAINT or PostgreSQL unique violation
     statusCode = 409;
-    message = 'Resource already exists';
+    if (err.message.includes('email') || err.message.includes('user')) {
+      message = 'Bu email adresi ile zaten bir hesap mevcut. Lütfen giriş yapın.';
+    } else {
+      message = 'Resource already exists';
+    }
   } else if (err.code === 'ENOENT') {
     statusCode = 404;
     message = 'Resource not found';
