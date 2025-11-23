@@ -17,31 +17,15 @@ if (!fs.existsSync(dbDir)) {
 let db;
 let postgresDb = null;
 let usePostgres = false;
+let postgresTested = false;
 
 if (USE_POSTGRES) {
   try {
     postgresDb = require('./postgres');
-    logger.info('PostgreSQL module loaded, testing connection...');
-    
-    // Test PostgreSQL connection
-    (async () => {
-      try {
-        const isConnected = await postgresDb.testConnection();
-        if (isConnected) {
-          usePostgres = true;
-          logger.info('Using PostgreSQL database');
-        } else {
-          logger.warn('PostgreSQL connection failed, falling back to SQLite');
-          usePostgres = false;
-        }
-      } catch (error) {
-        logger.error('PostgreSQL connection test error, falling back to SQLite:', error.message);
-        usePostgres = false;
-      }
-    })();
+    logger.info('PostgreSQL module loaded');
   } catch (error) {
     logger.error('Failed to load PostgreSQL config, falling back to SQLite:', error);
-    usePostgres = false;
+    postgresDb = null;
   }
 }
 
@@ -49,12 +33,51 @@ if (USE_POSTGRES) {
 db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     logger.error('Could not connect to SQLite database', err);
-  } else {
-    if (!usePostgres) {
-      logger.info('Connected to SQLite database');
-    }
   }
 });
+
+// Test PostgreSQL connection (async)
+async function testPostgresConnection() {
+  if (!USE_POSTGRES || !postgresDb || postgresTested) {
+    return;
+  }
+  
+  postgresTested = true;
+  try {
+    const isConnected = await postgresDb.testConnection();
+    if (isConnected) {
+      usePostgres = true;
+      logger.info('Using PostgreSQL database');
+    } else {
+      logger.warn('PostgreSQL connection failed, falling back to SQLite');
+      usePostgres = false;
+      if (!db) {
+        db = new sqlite3.Database(dbPath, (err) => {
+          if (err) {
+            logger.error('Could not connect to SQLite database', err);
+          } else {
+            logger.info('Connected to SQLite database (fallback)');
+          }
+        });
+      }
+    }
+  } catch (error) {
+    logger.error('PostgreSQL connection test error, falling back to SQLite:', error.message);
+    usePostgres = false;
+    if (!db) {
+      db = new sqlite3.Database(dbPath, (err) => {
+        if (err) {
+          logger.error('Could not connect to SQLite database', err);
+        } else {
+          logger.info('Connected to SQLite database (fallback)');
+        }
+      });
+    }
+  }
+}
+
+// Export test function
+module.exports.testPostgresConnection = testPostgresConnection;
 
 // Query function - supports both SQLite and PostgreSQL
 const query = async (sql, params = []) => {

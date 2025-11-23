@@ -35,12 +35,19 @@ app.set('trust proxy', 1);
 // Initialize database
 async function initializeDatabase() {
   try {
+    // Test PostgreSQL connection first if enabled
+    const db = require('./config/db');
+    if (typeof db.testPostgresConnection === 'function') {
+      await db.testPostgresConnection();
+    }
+    
     await User.init();
     await Forum.init();
     logger.info('Database initialized successfully');
   } catch (error) {
     logger.error('Failed to initialize database:', error);
-    process.exit(1);
+    // Don't exit - let it fall back to SQLite
+    logger.warn('Attempting to continue with fallback database...');
   }
 }
 
