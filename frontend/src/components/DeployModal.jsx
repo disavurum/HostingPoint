@@ -17,6 +17,7 @@ const DeployModal = ({ isOpen, onClose, onSuccess }) => {
   const [statusMessage, setStatusMessage] = useState('')
   const [forumUrl, setForumUrl] = useState('')
   const [showDomainGuide, setShowDomainGuide] = useState(false)
+  const [selectedServer, setSelectedServer] = useState('eunorth')
 
   // Auto-generate subdomain
   useEffect(() => {
@@ -82,7 +83,8 @@ const DeployModal = ({ isOpen, onClose, onSuccess }) => {
       const payload = {
         forumName: useCustomDomain ? null : forumName,
         customDomain: useCustomDomain ? customDomain : null,
-        autoGenerate: !useCustomDomain && autoGenerate
+        autoGenerate: !useCustomDomain && autoGenerate,
+        server: selectedServer
       }
       
       const response = await axios.post('/api/deploy', payload)
@@ -231,6 +233,23 @@ const DeployModal = ({ isOpen, onClose, onSuccess }) => {
                       Özel Domain
                     </button>
                   </div>
+                </div>
+
+                {/* Server Selection */}
+                <div>
+                  <label className="block text-sm font-bold text-black mb-2 uppercase tracking-wide">
+                    Sunucu Seçimi
+                  </label>
+                  <select
+                    value={selectedServer}
+                    onChange={(e) => setSelectedServer(e.target.value)}
+                    className="w-full bg-white border-2 border-black p-4 text-black font-medium outline-none focus:bg-yellow-50"
+                  >
+                    <option value="eunorth">EU North (Avrupa)</option>
+                  </select>
+                  <p className="text-sm text-gray-500 mt-2">
+                    Forumunuzun kurulacağı sunucu lokasyonu
+                  </p>
                 </div>
 
                 {!useCustomDomain ? (

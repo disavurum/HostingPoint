@@ -564,6 +564,28 @@ const Dashboard = () => {
                           >
                             <Settings className="h-5 w-5" />
                           </button>
+                          <button
+                            onClick={async () => {
+                              if (window.confirm(`"${forum.name}" forumunu silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`)) {
+                                try {
+                                  const token = localStorage.getItem('token');
+                                  await axios.delete(`${apiUrl}/api/forums/${forum.name}`, {
+                                    headers: { Authorization: `Bearer ${token}` }
+                                  });
+                                  await refreshForums();
+                                  setSuccessMessage('Forum başarıyla silindi.');
+                                  setTimeout(() => setSuccessMessage(''), 3000);
+                                } catch (err) {
+                                  setError(err.response?.data?.message || 'Forum silinirken bir hata oluştu.');
+                                  setTimeout(() => setError(''), 5000);
+                                }
+                              }
+                            }}
+                            className="p-2 border-2 border-red-500 text-red-600 hover:bg-red-50 transition-colors"
+                            title="Sil"
+                          >
+                            <Trash2 className="h-5 w-5" />
+                          </button>
                         </div>
                       </div>
 

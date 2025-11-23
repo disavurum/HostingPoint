@@ -219,7 +219,14 @@ app.post('/api/deploy', authenticate, async (req, res) => {
     const isLocalhost = finalDomain === 'localhost' || finalDomain === '127.0.0.1' || DOMAIN === 'localhost' || DOMAIN === '127.0.0.1';
 
     // Deploy forum
-    const result = await DeployService.deployForum(finalForumName, email, finalDomain, customDomainValue);
+    let result;
+    try {
+      result = await DeployService.deployForum(finalForumName, email, finalDomain, customDomainValue);
+    } catch (deployError) {
+      // If deployment fails, update forum status to failed
+      await Forum.updateStatus(finalForumName, 'failed').catch(() => {});
+      throw deployError; // Re-throw to be caught by outer catch
+    }
 
     // Update forum status
     await Forum.updateStatus(finalForumName, 'active');
