@@ -72,11 +72,26 @@ class DeployService {
       // Start deployment
       await CoolifyService.deployApplication(projectId, appResult.applicationId);
 
-      // Wait a bit for deployment to start
-      await new Promise(resolve => setTimeout(resolve, 5000));
-
-      // Get application status
-      const status = await CoolifyService.getApplicationStatus(projectId, appResult.applicationId);
+      // Wait a bit for deployment to start and check status
+      let status = { status: 'deploying', running: false };
+      let attempts = 0;
+      const maxAttempts = 12; // 1 minute total (5 seconds * 12)
+      
+      while (attempts < maxAttempts && !status.running) {
+        await new Promise(resolve => setTimeout(resolve, 5000));
+        status = await CoolifyService.getApplicationStatus(projectId, appResult.applicationId);
+        attempts++;
+        
+        if (status.running) {
+          logger.info('Application is running', { projectId, applicationId: appResult.applicationId });
+          break;
+        }
+        
+        logger.debug('Waiting for application to start', { 
+          attempt: attempts, 
+          status: status.status 
+        });
+      }
 
       return {
         forumName,

@@ -88,14 +88,31 @@ class CoolifyService {
   }
 
   /**
-   * Test Coolify connection
+   * Test Coolify connection and verify server
    */
   async testConnection() {
     try {
       const client = this.getApiClient();
-      // Try to access a simple endpoint to test connection
+      // Try to access servers endpoint to test connection
       const response = await client.get('/servers');
-      logger.info('Coolify connection test successful', { url: this.baseUrl });
+      
+      // Verify server ID exists
+      const servers = response.data || [];
+      const serverExists = servers.some(server => server.id === this.serverId || server.id === parseInt(this.serverId));
+      
+      if (!serverExists && servers.length > 0) {
+        logger.warn('Server ID not found in available servers', {
+          requestedServerId: this.serverId,
+          availableServers: servers.map(s => ({ id: s.id, name: s.name }))
+        });
+      }
+      
+      logger.info('Coolify connection test successful', { 
+        url: this.baseUrl,
+        serverId: this.serverId,
+        serverFound: serverExists,
+        availableServers: servers.length
+      });
       return true;
     } catch (error) {
       logger.error('Coolify connection test failed', {
@@ -111,14 +128,40 @@ class CoolifyService {
   }
 
   /**
+   * Get available servers from Coolify
+   */
+  async getServers() {
+    try {
+      const client = this.getApiClient();
+      const response = await client.get('/servers');
+      return response.data || [];
+    } catch (error) {
+      logger.error('Failed to get servers from Coolify', {
+        error: error.message,
+        code: error.code
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Create a new project in Coolify
    */
   async createProject(projectName) {
     try {
-      // Test connection first
+      // Test connection first and verify server
       const isConnected = await this.testConnection();
       if (!isConnected) {
         throw new Error(`Coolify'a bağlanılamıyor. COOLIFY_URL kontrol edin: ${this.baseUrl}`);
+      }
+
+      // Verify server exists
+      const servers = await this.getServers();
+      const serverExists = servers.some(server => server.id === this.serverId || server.id === parseInt(this.serverId));
+      
+      if (!serverExists) {
+        const availableServerIds = servers.map(s => s.id).join(', ');
+        throw new Error(`Server ID ${this.serverId} bulunamadı. Mevcut server'lar: ${availableServerIds || 'Yok'}. COOLIFY_SERVER_ID değerini kontrol edin.`);
       }
 
       const client = this.getApiClient();
@@ -135,7 +178,8 @@ class CoolifyService {
         projectName,
         error: error.response?.data || error.message,
         code: error.code,
-        url: this.baseUrl
+        url: this.baseUrl,
+        serverId: this.serverId
       });
       
       if (error.code === 'ECONNREFUSED' || error.message.includes('bağlanılamıyor')) {
@@ -148,6 +192,10 @@ class CoolifyService {
           '  - Container name (docker network içinde)'
         ];
         throw new Error(`Coolify'a bağlanılamıyor.\n${suggestions.join('\n')}`);
+      }
+      
+      if (error.message.includes('Server ID') || error.message.includes('bulunamadı')) {
+        throw error;
       }
       
       throw new Error(`Coolify proje oluşturulamadı: ${error.response?.data?.message || error.message}`);
@@ -210,7 +258,8 @@ class CoolifyService {
       logger.info('Coolify application created:', {
         forumName,
         applicationId: response.data.id,
-        projectId
+        projectId,
+        serverId: this.serverId
       });
 
       return {
@@ -224,8 +273,18 @@ class CoolifyService {
       logger.error('Failed to create Coolify application:', {
         forumName,
         projectId,
-        error: error.response?.data || error.message
+        serverId: this.serverId,
+        error: error.response?.data || error.message,
+        errorDetails: error.response?.data
       });
+      
+      // Check for "no available server" error
+      const errorMessage = error.response?.data?.message || error.message || '';
+      if (errorMessage.toLowerCase().includes('no available server') || 
+          errorMessage.toLowerCase().includes('server') && errorMessage.toLowerCase().includes('not found')) {
+        throw new Error(`Server bulunamadı. COOLIFY_SERVER_ID=${this.serverId} kontrol edin. Coolify Dashboard'dan mevcut server ID'lerini kontrol edin.`);
+      }
+      
       throw new Error(`Coolify uygulama oluşturulamadı: ${error.response?.data?.message || error.message}`);
     }
   }
