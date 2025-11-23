@@ -215,5 +215,6 @@ module.exports = {
   query,
   run,
   get,
-  db
+  db,
+  testPostgresConnection
 };
