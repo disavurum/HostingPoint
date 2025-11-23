@@ -47,6 +47,33 @@ COOLIFY_SERVER_ID=1
 
 **Sorun giderme:** `COOLIFY_URL_TROUBLESHOOTING.md` dosyasına bakın.
 
+#### 3. PostgreSQL Configuration (Opsiyonel)
+
+Eğer PostgreSQL kullanmak istiyorsanız:
+
+**Seçenek 1: Connection String (ÖNERİLEN)**
+- **Key:** `POSTGRES_URL`
+- **Value:** `postgres://postgres:xpxJozAfxiP5QURDDP8HNK1YrB8kfSRx7u6F6sR2jCXWfomm0VsUV9mfnpwOuvF1@poc0cok0kok8c0okow04gows:5432/postgres`
+- **Type:** Environment Variable
+- **⚠️ Secret:** İşaretleyin (güvenlik için)
+
+**Seçenek 2: Ayrı Parametreler**
+- **Key:** `USE_POSTGRES`
+- **Value:** `true`
+- **Key:** `POSTGRES_HOST`
+- **Value:** `poc0cok0kok8c0okow04gows`
+- **Key:** `POSTGRES_PORT`
+- **Value:** `5432`
+- **Key:** `POSTGRES_DATABASE`
+- **Value:** `postgres`
+- **Key:** `POSTGRES_USER`
+- **Value:** `postgres`
+- **Key:** `POSTGRES_PASSWORD`
+- **Value:** `xpxJozAfxiP5QURDDP8HNK1YrB8kfSRx7u6F6sR2jCXWfomm0VsUV9mfnpwOuvF1`
+- **⚠️ Secret:** Password'u Secret olarak işaretleyin
+
+**Not:** Container name `postgresql-database-poc0cok0kok8c0okow04gows` ama host adı `poc0cok0kok8c0okow04gows` olmalı.
+
 #### 3. COOLIFY_API_KEY
 - **Key:** `COOLIFY_API_KEY`
 - **Value:** `VzUwe69V6tiwLebLYIPE7U4jkLRIST0K8bppa1EV1f260694`

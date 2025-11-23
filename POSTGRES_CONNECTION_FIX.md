@@ -63,11 +63,19 @@ docker network connect <network-name> postgresql-database-poc0cok0kok8c0okow04go
 
 ## 🔧 Environment Variable'ları Güncelleyin
 
-### Seçenek 1: Container Name (Aynı Network'te)
+### Seçenek 1: Connection String (ÖNERİLEN)
 
 ```env
-POSTGRES_HOST=postgresql-database-poc0cok0kok8c0okow04gows
+POSTGRES_URL=postgres://postgres:xpxJozAfxiP5QURDDP8HNK1YrB8kfSRx7u6F6sR2jCXWfomm0VsUV9mfnpwOuvF1@poc0cok0kok8c0okow04gows:5432/postgres
 ```
+
+### Seçenek 2: Container Name (Aynı Network'te)
+
+```env
+POSTGRES_HOST=poc0cok0kok8c0okow04gows
+```
+
+**Not:** Container name `postgresql-database-poc0cok0kok8c0okow04gows` ama host adı `poc0cok0kok8c0okow04gows` olmalı.
 
 ### Seçenek 2: IP Adresi
 
@@ -120,14 +128,16 @@ psql -h postgresql-database-poc0cok0kok8c0okow04gows -U postgres -d postgres
 
 ---
 
-## 📝 Önerilen POSTGRES_HOST Değerleri
+## 📝 Önerilen PostgreSQL Bağlantı Yöntemleri
 
-| Durum | POSTGRES_HOST Değeri |
-|-------|---------------------|
-| Aynı network, container name | `postgresql-database-poc0cok0kok8c0okow04gows` |
-| Aynı network, farklı name | Container'ın gerçek adı |
+| Yöntem | Değer |
+|--------|-------|
+| Connection String (ÖNERİLEN) | `POSTGRES_URL=postgres://postgres:password@poc0cok0kok8c0okow04gows:5432/postgres` |
+| Ayrı Parametreler | `POSTGRES_HOST=poc0cok0kok8c0okow04gows` |
 | Farklı network | IP adresi |
 | Aynı container | `localhost` |
+
+**Not:** Container name `postgresql-database-poc0cok0kok8c0okow04gows` ama host adı `poc0cok0kok8c0okow04gows` olmalı.
 
 ---
 

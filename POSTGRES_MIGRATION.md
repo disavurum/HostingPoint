@@ -23,16 +23,27 @@ npm install pg
 
 Backend service'inize (Coolify'da) şu environment variable'ları ekleyin:
 
+#### Seçenek 1: Connection String (ÖNERİLEN)
+
+```env
+USE_POSTGRES=true
+POSTGRES_URL=postgres://postgres:xpxJozAfxiP5QURDDP8HNK1YrB8kfSRx7u6F6sR2jCXWfomm0VsUV9mfnpwOuvF1@poc0cok0kok8c0okow04gows:5432/postgres
+```
+
+#### Seçenek 2: Ayrı Parametreler
+
 ```env
 # PostgreSQL Configuration
 USE_POSTGRES=true
-POSTGRES_HOST=postgresql-database-poc0cok0kok8c0okow04gows
+POSTGRES_HOST=poc0cok0kok8c0okow04gows
 POSTGRES_PORT=5432
 POSTGRES_DATABASE=postgres
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=xpxJozAfxiP5QURDDP8HNK1YrB8kfSRx7u6F6sR2jCXWfomm0VsUV9mfnpwOuvF1
 POSTGRES_SSL=false
 ```
+
+**Not:** Container name `postgresql-database-poc0cok0kok8c0okow04gows` ama host adı `poc0cok0kok8c0okow04gows` olmalı.
 
 **Önemli:** 
 - `POSTGRES_HOST` değeri container name olmalı (Docker network içinde)
