@@ -16,33 +16,69 @@ if (!fs.existsSync(dbDir)) {
 // Use PostgreSQL if configured, otherwise SQLite
 let db;
 let postgresDb = null;
+let usePostgres = false;
 
 if (USE_POSTGRES) {
   try {
     postgresDb = require('./postgres');
-    logger.info('Using PostgreSQL database');
+    logger.info('PostgreSQL module loaded, testing connection...');
+    
+    // Test PostgreSQL connection
+    (async () => {
+      try {
+        const isConnected = await postgresDb.testConnection();
+        if (isConnected) {
+          usePostgres = true;
+          logger.info('Using PostgreSQL database');
+        } else {
+          logger.warn('PostgreSQL connection failed, falling back to SQLite');
+          usePostgres = false;
+        }
+      } catch (error) {
+        logger.error('PostgreSQL connection test error, falling back to SQLite:', error.message);
+        usePostgres = false;
+      }
+    })();
   } catch (error) {
     logger.error('Failed to load PostgreSQL config, falling back to SQLite:', error);
+    usePostgres = false;
   }
 }
 
-if (!USE_POSTGRES || !postgresDb) {
-  db = new sqlite3.Database(dbPath, (err) => {
-    if (err) {
-      logger.error('Could not connect to database', err);
-    } else {
+// Always initialize SQLite as fallback
+db = new sqlite3.Database(dbPath, (err) => {
+  if (err) {
+    logger.error('Could not connect to SQLite database', err);
+  } else {
+    if (!usePostgres) {
       logger.info('Connected to SQLite database');
     }
-  });
-}
+  }
+});
 
 // Query function - supports both SQLite and PostgreSQL
 const query = async (sql, params = []) => {
-  if (USE_POSTGRES && postgresDb) {
-    // Convert SQLite syntax to PostgreSQL if needed
-    const pgSql = convertSqliteToPostgres(sql, params);
-    const result = await postgresDb.getAll(pgSql, params);
-    return result;
+  if (usePostgres && postgresDb) {
+    try {
+      // Convert SQLite syntax to PostgreSQL if needed
+      const pgSql = convertSqliteToPostgres(sql, params);
+      const result = await postgresDb.getAll(pgSql, params);
+      return result;
+    } catch (error) {
+      // If PostgreSQL query fails, fall back to SQLite
+      logger.warn('PostgreSQL query failed, falling back to SQLite:', error.message);
+      usePostgres = false;
+      return new Promise((resolve, reject) => {
+        db.all(sql, params, (err, rows) => {
+          if (err) {
+            logger.error('Database query error', { sql, error: err.message });
+            reject(err);
+          } else {
+            resolve(rows);
+          }
+        });
+      });
+    }
   } else {
     return new Promise((resolve, reject) => {
       db.all(sql, params, (err, rows) => {
@@ -59,11 +95,27 @@ const query = async (sql, params = []) => {
 
 // Run function (for INSERT, UPDATE, DELETE)
 const run = async (sql, params = []) => {
-  if (USE_POSTGRES && postgresDb) {
-    // Convert SQLite syntax to PostgreSQL
-    const pgSql = convertSqliteToPostgres(sql, params);
-    const result = await postgresDb.run(pgSql, params);
-    return result;
+  if (usePostgres && postgresDb) {
+    try {
+      // Convert SQLite syntax to PostgreSQL
+      const pgSql = convertSqliteToPostgres(sql, params);
+      const result = await postgresDb.run(pgSql, params);
+      return result;
+    } catch (error) {
+      // If PostgreSQL query fails, fall back to SQLite
+      logger.warn('PostgreSQL run failed, falling back to SQLite:', error.message);
+      usePostgres = false;
+      return new Promise((resolve, reject) => {
+        db.run(sql, params, function (err) {
+          if (err) {
+            logger.error('Database run error', { sql, error: err.message });
+            reject(err);
+          } else {
+            resolve({ id: this.lastID, changes: this.changes });
+          }
+        });
+      });
+    }
   } else {
     return new Promise((resolve, reject) => {
       db.run(sql, params, function (err) {
@@ -80,10 +132,26 @@ const run = async (sql, params = []) => {
 
 // Get function (for single row)
 const get = async (sql, params = []) => {
-  if (USE_POSTGRES && postgresDb) {
-    const pgSql = convertSqliteToPostgres(sql, params);
-    const result = await postgresDb.get(pgSql, params);
-    return result;
+  if (usePostgres && postgresDb) {
+    try {
+      const pgSql = convertSqliteToPostgres(sql, params);
+      const result = await postgresDb.get(pgSql, params);
+      return result;
+    } catch (error) {
+      // If PostgreSQL query fails, fall back to SQLite
+      logger.warn('PostgreSQL get failed, falling back to SQLite:', error.message);
+      usePostgres = false;
+      return new Promise((resolve, reject) => {
+        db.get(sql, params, (err, row) => {
+          if (err) {
+            logger.error('Database get error', { sql, error: err.message });
+            reject(err);
+          } else {
+            resolve(row);
+          }
+        });
+      });
+    }
   } else {
     return new Promise((resolve, reject) => {
       db.get(sql, params, (err, row) => {

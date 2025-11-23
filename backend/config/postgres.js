@@ -11,7 +11,7 @@ const pool = new Pool({
   ssl: process.env.POSTGRES_SSL === 'true' ? { rejectUnauthorized: false } : false,
   max: 20, // Maximum number of clients in the pool
   idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 2000,
+  connectionTimeoutMillis: 10000, // Increased to 10 seconds
 });
 
 // Test connection
@@ -21,8 +21,24 @@ pool.on('connect', () => {
 
 pool.on('error', (err) => {
   logger.error('Unexpected error on idle PostgreSQL client', err);
-  process.exit(-1);
+  // Don't exit - let the app fall back to SQLite
 });
+
+// Test connection function
+const testConnection = async () => {
+  try {
+    const result = await pool.query('SELECT NOW()');
+    logger.info('PostgreSQL connection test successful');
+    return true;
+  } catch (error) {
+    logger.error('PostgreSQL connection test failed', { 
+      error: error.message,
+      code: error.code,
+      host: process.env.POSTGRES_HOST 
+    });
+    return false;
+  }
+};
 
 // Query helper
 const query = async (text, params) => {
@@ -33,7 +49,7 @@ const query = async (text, params) => {
     logger.debug('Executed query', { text, duration, rows: res.rowCount });
     return res;
   } catch (error) {
-    logger.error('Database query error', { text, error: error.message });
+    logger.error('Database query error', { text, error: error.message, code: error.code });
     throw error;
   }
 };
@@ -80,6 +96,7 @@ module.exports = {
   getAll,
   run,
   close,
-  pool
+  pool,
+  testConnection
 };
 
