@@ -400,6 +400,18 @@ function HomePage() {
               <div className="absolute -top-5 left-1/2 -translate-x-1/2 bg-black text-white px-6 py-2 font-bold border-2 border-black transform rotate-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                 EN POPÜLER
               </div>
+              {/* Starter Plan Image */}
+              <div className="mb-6 border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] overflow-hidden bg-white">
+                <img
+                  src="/src/assets/images/starter-plan.png"
+                  alt="Starter Plan"
+                  className="w-full h-auto"
+                  onError={(e) => {
+                    // Fallback if image doesn't exist
+                    e.target.style.display = 'none';
+                  }}
+                />
+              </div>
               <div className="bg-black text-white inline-block px-4 py-1 border-2 border-black font-bold mb-4 text-sm uppercase tracking-wider">
                 {t('pricing.plans.starter.name')}
               </div>
