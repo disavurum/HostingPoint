@@ -10,10 +10,16 @@
 Backend service'inize (Coolify'da) aşağıdaki environment variable'ları ekleyin:
 
 ```env
+# Coolify Integration
 USE_COOLIFY=true
 COOLIFY_URL=http://coolify:8000
 COOLIFY_API_KEY=VzUwe69V6tiwLebLYIPE7U4jkLRIST0K8bppa1EV1f260694
 COOLIFY_SERVER_ID=1
+
+# Node.js Configuration
+NODE_ENV=production
+NIXPACKS_NODE_VERSION=22
+PORT=3000
 ```
 
 ---
@@ -84,6 +90,28 @@ Eğer PostgreSQL kullanmak istiyorsanız:
 - **Key:** `COOLIFY_SERVER_ID`
 - **Value:** `1`
 - **Type:** Environment Variable
+
+#### 5. NODE_ENV (ÖNEMLİ!)
+- **Key:** `NODE_ENV`
+- **Value:** `production`
+- **Type:** Environment Variable
+- **⚠️ Runtime Only:** İşaretleyin (build-time'da kullanılmasın)
+
+**Not:** `NODE_ENV=3000` gibi yanlış değerler kullanmayın! `production` veya `development` olmalı.
+
+#### 6. NIXPACKS_NODE_VERSION (Önerilen)
+- **Key:** `NIXPACKS_NODE_VERSION`
+- **Value:** `22`
+- **Type:** Environment Variable
+- **⚠️ Build-time:** İşaretleyin (build sırasında kullanılır)
+
+**Not:** Node.js 18 EOL (End of Life) oldu. Node.js 22 kullanın.
+
+#### 7. PORT
+- **Key:** `PORT`
+- **Value:** `3000`
+- **Type:** Environment Variable
+- **⚠️ Runtime Only:** İşaretleyin
 
 ### Adım 4: Kaydet ve Redeploy
 1. Tüm variable'ları ekledikten sonra **"Save"** butonuna tıklayın
