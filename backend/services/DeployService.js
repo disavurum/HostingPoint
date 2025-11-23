@@ -4,6 +4,7 @@ const { exec } = require('child_process');
 const { promisify } = require('util');
 const Docker = require('dockerode');
 const { v4: uuidv4 } = require('uuid');
+const CoolifyService = require('./CoolifyService');
 
 // Custom execAsync with increased buffer for Docker output
 const execAsync = (command, options = {}) => {
@@ -38,9 +39,64 @@ fs.ensureDirSync(CUSTOMERS_DIR);
 
 class DeployService {
   /**
-   * Deploy a new Discourse forum
+   * Deploy a new Discourse forum using Coolify
    */
   static async deployForum(forumName, email, domain, customDomain = null) {
+    const useCoolify = process.env.USE_COOLIFY === 'true' || process.env.USE_COOLIFY === '1';
+    
+    if (useCoolify) {
+      return await this.deployForumWithCoolify(forumName, email, domain, customDomain);
+    } else {
+      return await this.deployForumWithDocker(forumName, email, domain, customDomain);
+    }
+  }
+
+  /**
+   * Deploy forum using Coolify
+   */
+  static async deployForumWithCoolify(forumName, email, domain, customDomain = null) {
+    try {
+      // Create project in Coolify
+      const project = await CoolifyService.createProject(`forum-${forumName}`);
+      const projectId = project.id;
+
+      // Create application in Coolify
+      const appResult = await CoolifyService.createApplication(
+        projectId,
+        forumName,
+        email,
+        domain,
+        customDomain
+      );
+
+      // Start deployment
+      await CoolifyService.deployApplication(projectId, appResult.applicationId);
+
+      // Wait a bit for deployment to start
+      await new Promise(resolve => setTimeout(resolve, 5000));
+
+      // Get application status
+      const status = await CoolifyService.getApplicationStatus(projectId, appResult.applicationId);
+
+      return {
+        forumName,
+        status: 'deploying',
+        projectId,
+        applicationId: appResult.applicationId,
+        domain: appResult.domain,
+        coolifyProjectId: projectId,
+        coolifyApplicationId: appResult.applicationId,
+        url: status.url || (customDomain ? `https://${customDomain}` : `https://${forumName}.${domain}`)
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Deploy forum using direct Docker (legacy method)
+   */
+  static async deployForumWithDocker(forumName, email, domain, customDomain = null) {
     // Check Docker socket access
     try {
       if (!docker) {

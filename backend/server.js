@@ -205,9 +205,6 @@ app.post('/api/deploy', authenticate, async (req, res) => {
       });
     }
 
-    // Create forum record in database
-    const forumRecord = await Forum.create(finalForumName, req.userId, email, finalDomain, customDomainValue);
-
     logger.info('Starting forum deployment:', {
       forumName: finalForumName,
       customDomain: customDomainValue,
@@ -220,11 +217,33 @@ app.post('/api/deploy', authenticate, async (req, res) => {
 
     // Deploy forum
     let result;
+    let forumRecord;
     try {
       result = await DeployService.deployForum(finalForumName, email, finalDomain, customDomainValue);
+      
+      // Create forum record in database with Coolify IDs
+      forumRecord = await Forum.create(
+        finalForumName, 
+        req.userId, 
+        email, 
+        finalDomain, 
+        customDomainValue,
+        result.coolifyProjectId || null,
+        result.coolifyApplicationId || null
+      );
+      
+      // If Coolify IDs were returned but not saved, update them
+      if (result.coolifyProjectId && result.coolifyApplicationId) {
+        await Forum.updateCoolifyIds(finalForumName, result.coolifyProjectId, result.coolifyApplicationId);
+      }
     } catch (deployError) {
-      // If deployment fails, update forum status to failed
-      await Forum.updateStatus(finalForumName, 'failed').catch(() => {});
+      // If deployment fails, try to create forum record with failed status
+      try {
+        forumRecord = await Forum.create(finalForumName, req.userId, email, finalDomain, customDomainValue);
+        await Forum.updateStatus(finalForumName, 'failed');
+      } catch (dbError) {
+        logger.error('Failed to create forum record:', dbError);
+      }
       throw deployError; // Re-throw to be caught by outer catch
     }
 
@@ -233,7 +252,10 @@ app.post('/api/deploy', authenticate, async (req, res) => {
 
     // Generate forum URL based on environment
     let forumUrl;
-    if (customDomainValue) {
+    if (result.url) {
+      // Use URL from deployment result (Coolify provides this)
+      forumUrl = result.url;
+    } else if (customDomainValue) {
       forumUrl = `https://${customDomainValue}`;
     } else if (isLocalhost) {
       // For localhost, use the port from deployment result
@@ -530,8 +552,13 @@ app.delete('/api/forums/:forumName', authenticate, async (req, res, next) => {
 
     logger.info('Deleting forum:', { forumName, userId: req.userId });
 
-    // Remove forum containers and files
-    await DeployService.removeForum(forumName);
+    // Get Coolify IDs before deleting from database
+    const forum = await Forum.findByName(forumName);
+    const coolifyProjectId = forum?.coolify_project_id;
+    const coolifyApplicationId = forum?.coolify_application_id;
+
+    // Remove forum containers and files (or from Coolify)
+    await DeployService.removeForum(forumName, coolifyProjectId, coolifyApplicationId);
 
     // Remove from database
     await Forum.delete(forumName);

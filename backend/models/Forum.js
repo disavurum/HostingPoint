@@ -6,13 +6,19 @@ class Forum {
   }
 
   async createTable() {
-    // Check if custom_domain column exists, if not add it
+    // Check existing columns and add missing ones
     try {
       const tableInfo = await db.query("PRAGMA table_info(forums)");
-      const hasCustomDomain = tableInfo.some(col => col.name === 'custom_domain');
+      const columns = tableInfo.map(col => col.name);
       
-      if (!hasCustomDomain) {
+      if (!columns.includes('custom_domain')) {
         await db.run("ALTER TABLE forums ADD COLUMN custom_domain TEXT");
+      }
+      if (!columns.includes('coolify_project_id')) {
+        await db.run("ALTER TABLE forums ADD COLUMN coolify_project_id TEXT");
+      }
+      if (!columns.includes('coolify_application_id')) {
+        await db.run("ALTER TABLE forums ADD COLUMN coolify_application_id TEXT");
       }
     } catch (err) {
       // Table might not exist yet, that's okay
@@ -26,6 +32,8 @@ class Forum {
         email TEXT NOT NULL,
         domain TEXT NOT NULL,
         custom_domain TEXT,
+        coolify_project_id TEXT,
+        coolify_application_id TEXT,
         status TEXT DEFAULT 'deploying',
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -40,14 +48,33 @@ class Forum {
     }
   }
 
-  async create(name, userId, email, domain, customDomain = null) {
+  async create(name, userId, email, domain, customDomain = null, coolifyProjectId = null, coolifyApplicationId = null) {
     const query = `
-      INSERT INTO forums (name, user_id, email, domain, custom_domain, status) 
-      VALUES (?, ?, ?, ?, ?, 'deploying') 
+      INSERT INTO forums (name, user_id, email, domain, custom_domain, coolify_project_id, coolify_application_id, status) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'deploying') 
     `;
     try {
-      const result = await db.run(query, [name, userId, email, domain, customDomain]);
-      return { id: result.id, name, user_id: userId, email, domain, custom_domain: customDomain, status: 'deploying' };
+      const result = await db.run(query, [name, userId, email, domain, customDomain, coolifyProjectId, coolifyApplicationId]);
+      return { 
+        id: result.id, 
+        name, 
+        user_id: userId, 
+        email, 
+        domain, 
+        custom_domain: customDomain,
+        coolify_project_id: coolifyProjectId,
+        coolify_application_id: coolifyApplicationId,
+        status: 'deploying' 
+      };
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  async updateCoolifyIds(name, projectId, applicationId) {
+    const query = `UPDATE forums SET coolify_project_id = ?, coolify_application_id = ?, updated_at = CURRENT_TIMESTAMP WHERE name = ?`;
+    try {
+      await db.run(query, [projectId, applicationId, name]);
     } catch (err) {
       throw err;
     }
