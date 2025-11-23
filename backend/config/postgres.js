@@ -44,13 +44,17 @@ pool.on('error', (err) => {
 const testConnection = async () => {
   try {
     const result = await pool.query('SELECT NOW()');
-    logger.info('PostgreSQL connection test successful');
+    logger.info('PostgreSQL connection test successful', {
+      host: process.env.POSTGRES_URL ? 'connection string' : process.env.POSTGRES_HOST || 'localhost',
+      database: process.env.POSTGRES_DATABASE || 'postgres'
+    });
     return true;
   } catch (error) {
     logger.error('PostgreSQL connection test failed', { 
       error: error.message,
       code: error.code,
-      host: process.env.POSTGRES_HOST 
+      host: process.env.POSTGRES_URL ? 'connection string' : process.env.POSTGRES_HOST || 'localhost',
+      suggestion: 'Check POSTGRES_URL or POSTGRES_HOST, POSTGRES_PORT, POSTGRES_USER, POSTGRES_PASSWORD'
     });
     return false;
   }
